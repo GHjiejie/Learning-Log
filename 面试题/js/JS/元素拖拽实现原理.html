@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drag and Drop</title>
+  <style>
+    #draggable {
+      width: 100px;
+      height: 100px;
+      background-color: #ccc;
+      position: absolute;
+      cursor: move;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="draggable"></div>
+
+  <script>
+    var draggable = document.getElementById('draggable');
+    var offsetX, offsetY;
+    // PC端的拖拽事件
+    draggable.addEventListener('mousedown', startDrag);
+
+    // 移动端的拖拽事件
+    draggable.addEventListener('touchstart', startDrag);
+
+    function startDrag(e) {
+      e.preventDefault();
+
+      if (e.type === 'mousedown') {
+        offsetX = e.clientX - draggable.getBoundingClientRect().left;
+        offsetY = e.clientY - draggable.getBoundingClientRect().top;
+        window.addEventListener('mousemove', drag);
+        window.addEventListener('mouseup', stopDrag);
+      }
+      else if (e.type === 'touchstart') {
+        var touch = e.touches[0];
+        offsetX = touch.clientX - draggable.getBoundingClientRect().left;
+        offsetY = touch.clientY - draggable.getBoundingClientRect().top;
+        window.addEventListener('touchmove', drag);
+        window.addEventListener('touchend', stopDrag);
+      }
+    }
+
+    function drag(e) {
+      e.preventDefault();
+
+      if (e.type === 'mousemove') {
+        draggable.style.left = e.clientX - offsetX + 'px';
+        draggable.style.top = e.clientY - offsetY + 'px';
+      }
+      else if (e.type === 'touchmove') {
+        var touch = e.touches[0];
+        draggable.style.left = touch.clientX - offsetX + 'px';
+        draggable.style.top = touch.clientY - offsetY + 'px';
+      }
+    }
+
+    function stopDrag(e) {
+      if (e.type === 'mouseup') {
+        window.removeEventListener('mousemove', drag);
+        window.removeEventListener('mouseup', stopDrag);
+      }
+      else if (e.type === 'touchend') {
+        window.removeEventListener('touchmove', drag);
+        window.removeEventListener('touchend', stopDrag);
+      }
+    }
+  </script>
+
+</body>
+
+</html>

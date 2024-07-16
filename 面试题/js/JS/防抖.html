@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <input type="text" id="debounceInput">
+  <p class="testInput"></p>
+  <script>
+    const debounceInput = document.getElementById('debounceInput');
+    const testInput = document.querySelector('.testInput');
+    // 防抖的实现使用了闭包
+    function debounce(fn, delay) {
+      let timer = null;
+      return function () {
+        // 清除之前的所有的计时器，确保只执行最后一次
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          fn();
+        }, delay);
+      }
+    }
+
+    debounceInput.addEventListener('input', debounce(function () {
+      testInput.textContent = debounceInput.value;
+    }, 1000));
+  </script>
+</body>
+
+</html>

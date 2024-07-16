@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <ul>
+    <li class="first"></li>
+    <li class="second"></li>
+    <li class="third"></li>
+  </ul>
+
+</body>
+<script>
+  const ul = document.querySelector('ul');
+  const third = document.querySelector('.third');
+  const second = document.querySelector('.second');
+  const first = document.querySelector('.first');
+
+
+  first.addEventListener('click', (e) => {
+    console.log('first被点击了');
+
+  })
+
+  second.addEventListener('click', (e) => {
+    console.log('second被点击了');
+
+  })
+
+
+
+  third.addEventListener('click', (e) => {
+    console.log('third被点击了');
+
+  })
+
+  ul.addEventListener('click', (e) => {
+    console.log('ul被点击了');
+
+  })
+
+</script>
+
+</html>

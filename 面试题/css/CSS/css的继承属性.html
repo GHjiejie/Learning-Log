@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    .parent {
+        font-size: 20px;
+        width: 200px;
+        height: 200px;
+        background-color: red;
+        color: white;
+
+        text-align: center;
+        line-height: 150px;
+
+    }
+
+
+
+    .child {
+
+
+        width: 300px;
+        height: 150px;
+        /* color是可以继承的 */
+        color: inherit;
+        background-color: inherit;
+        margin-top: 300px;
+    }
+</style>
+
+<body>
+    <div class="parent">
+
+        <p>我是父元素</p>
+        <div class="child">
+            <p>我是子元素的a标签</p>
+        </div>
+    </div>
+</body>
+
+</html>

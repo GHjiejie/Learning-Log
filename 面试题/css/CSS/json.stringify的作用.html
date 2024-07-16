@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        const obj = {
+            name: '张三',
+            age: 18,
+            testArray: [1, 2, 3],
+            testObj: {
+                a: 1,
+                b: 2
+            },
+            testBoolean: true,
+            testNull: null,
+            // 日期对象
+            testDate: new Date(),
+
+            // 下面是会被忽略的类型,我们在使用JSON.stringify实现深拷贝的时候，要避免·这些类型
+            // 正则对象: 
+            testReg: /正则/,
+            // 函数
+            add: function () {
+                console.log('add');
+            },
+            // undefined
+            testUndefined: undefined,
+            // Symbol
+            testSymbol: Symbol('test'),
+            // Infinity
+            testInfinity: Infinity,
+            // NaN
+            testNaN: NaN
+
+        }
+        console.log(JSON.stringify(obj));
+    </script>
+</body>
+
+</html>

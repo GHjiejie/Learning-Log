@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Web Worker Example</title>
+</head>
+
+<body>
+
+    <button onclick="startWorker()">Start Worker</button>
+    <p id="result"></p>
+
+    <script>
+
+
+        const worker = new Worker('worker.js');
+        worker.onmessage = function (e) {
+            document.getElementById('result').innerHTML = e.data;
+        };
+    </script>
+
+</body>
+
+</html>

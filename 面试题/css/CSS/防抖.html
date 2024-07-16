@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <!-- <input type="text" oninput="textChange()" class="normalInput">
+    普通效果：<span class="normal"></span>
+    <br> -->
+    <input type="text" oninput="debounceChange()" class="debounceInput">
+    防抖效果：<span class="debounceSpan"></span>
+
+
+    <script>
+        // const normalInput = document.querySelector('.normalInput');
+        // const normal = document.querySelector('.normal');
+        // const textChange = () => {
+        //     normal.textContent = normalInput.value;
+        // }
+
+
+
+        const debounceInput = document.querySelector('.debounceInput');
+        const debounceSpan = document.querySelector('.debounceSpan');
+
+        const debounce = (fn, delay) => {
+            let timer = null;
+            return () => {
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    fn();
+                }, delay);
+            }
+        }
+
+        const debounceChange = debounce(
+            () => {
+                debounceSpan.innerHTML = debounceInput.value;
+            }
+            , 1000);
+
+
+
+
+
+
+
+
+
+
+
+    </script>
+</body>
+
+</html>

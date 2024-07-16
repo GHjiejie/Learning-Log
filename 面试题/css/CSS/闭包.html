@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        // 封装变量 - 闭包封装私有变量
+        // function createCounter() {
+        //     let count = 0;
+        //     // 暴露特定的方法来供外部调用
+        //     return {
+        //         increment: function () {
+        //             count++;
+        //         },
+        //         getCount: function () {
+        //             return count;
+        //         }
+        //     };
+        // }
+
+        // const couter = createCounter();
+        // couter.increment();
+        // console.log(couter.getCount());//输出1
+
+        //延迟执行 - 闭包实现延迟执行
+        // const delay = (function () {
+        //     let timer = 0;
+        //     return function (callback, ms) {
+        //         clearTimeout(timer);
+        //         timer = setTimeout(callback, ms);
+        //     };
+        // })();
+
+        // delay(function () {
+        //     console.log('Hello');
+        // }, 1000);
+
+    </script>
+</body>
+
+</html>

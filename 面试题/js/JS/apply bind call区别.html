@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function Person(name, age) {
+      this.name = name;
+      this.age = age;
+    }
+
+    function greet() {
+      console.log(`Hello, I'm ${this.name}, I'm ${this.age} years old.`);
+    }
+
+    const person = new Person('Jie', 18);
+
+    // 1->使用call 将greet函数里面的this指向person对象
+    greet.call(person, 'Jie', 18);
+
+    // 2->使用apply 
+    greet.apply(person, ['Jie', 18]);
+
+    // 3->使用bind
+    const greetPerson = greet.bind(person);
+    // console.log(greetPerson);//输出的是对一个函数的引用，我们需要调用才可以
+    greetPerson();
+  </script>
+</body>
+
+</html>

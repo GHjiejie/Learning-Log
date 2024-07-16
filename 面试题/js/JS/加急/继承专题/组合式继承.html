@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function Parent() {
+      this.name = 'parent';
+      this.sayHello = function () {
+        return 'parent_hello';
+      }
+    }
+    Parent.prototype.a = 'hello,我是父类原型上的属性a';
+
+
+    function Child() {
+      Parent.call(this);
+      this.age = 18;
+    }
+
+    Child.prototype = new Parent();
+
+    const child1 = new Child();
+    const child2 = new Child();
+    console.log(child1.age); //18
+    console.log(child1.name); //parent
+    child1.a = 'test_a';
+    child2.a = 'test_2';
+    console.log(child1.a); //test_a
+    console.log(child2.a); //test_2
+
+    // 说明组合式继承不会有原型链上的构造函数的污染
+
+    // console.log(child1.sayHello === child2.sayHello); //parent_hello
+
+    // console.log(child1.a);
+    // console.log(child2.a);
+    // console.log(child1.a === child2.a);
+
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three Column Layout</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+        }
+
+        .sidebar {
+            width: 200px;
+            /* 固定宽度的左侧栏 */
+            background-color: lightblue;
+        }
+
+        .main-content {
+            flex: 1;
+            /* 自适应宽度的主内容区域 */
+            background-color: lightgreen;
+        }
+
+        .sidebar2 {
+            width: 200px;
+            /* 固定宽度的右侧栏 */
+            background-color: lightcoral;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="sidebar">Left Sidebar</div>
+        <div class="main-content">Main Content</div>
+        <div class="sidebar2">Right Sidebar</div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <textarea name="" id="copyTest" cols="30" rows="10" oncopy="logCopy()" oncut="logCut()">
+   hfgjghbsd        
+</textarea>
+    <p class="log"></p>
+    <script>
+        const copyTest = document.getElementById('copyTest');
+        const log = document.querySelector('.log');
+        function logCopy() {
+            log.textContent = 'Text copied!';
+        }
+        function logCut() {
+            // 阻止默认的事件
+            event.preventDefault();
+            log.textContent = '阻止剪切事件';
+        }
+    </script>
+</body>
+
+</html>

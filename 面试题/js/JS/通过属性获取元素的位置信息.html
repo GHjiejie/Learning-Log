@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Element Position Example</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #myElement {
+      width: 200px;
+      height: 100px;
+      background-color: lightblue;
+      border: 2px solid blue;
+      overflow: scroll;
+      position: relative;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="myElement">Scrollable Element</div>
+  <script>
+    const element = document.getElementById('myElement');
+
+    // 获取元素的位置信息
+    const offsetTop = element.offsetTop;
+    const offsetLeft = element.offsetLeft;
+
+    const clientTop = element.clientTop;
+    const clientLeft = element.clientLeft;
+
+    const scrollTop = element.scrollTop;
+    const scrollLeft = element.scrollLeft;
+
+    console.log('Offset Top:', offsetTop);
+    console.log('Offset Left:', offsetLeft);
+    console.log('Client Top:', clientTop);
+    console.log('Client Left:', clientLeft);
+    console.log('Scroll Top:', scrollTop);
+    console.log('Scroll Left:', scrollLeft);
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    // 自定义一个函数，接受的参数是一个构造函数和构造函数的参数(我们使用剩余参数的形式来接受所有的参数)
+    function myNew(Func, ...args) {
+
+      // 为了优化，我们可以添加错误处理
+      if (typeof Func !== 'function') {
+        throw new Error('Constructor function is required.');
+      }
+
+      // 首先创建一个空对象
+      let obj = {};
+
+      // 链接到原型链
+      obj.__proto__ = Func.prototype;
+
+      // 绑定this，将Func里面的this指向obj,同时将所有的参数obj
+      let result = Func.apply(obj, args);
+      // console.log(result);//输出undefined 为什么？？？ 
+      // 因为我们的Person构造函数没有显示的显示返回值，所以是undefined，但这个构造函数是有隐式返回值的，即返回了this，也就是obj，或者说我们实例化的对象
+      // 我们可以在构造函数的末尾加上return this;来显示的返回this，这样就不会出现undefined了，但是会影响代码的美观性
+      // 所以，，如果一个变量是通过new关键字实例化一个构造函数得到的，那么这个构造函数通常不应该有显示的返回值，因为这个构造函数的返回值是隐式的，即返回this，也就是实例化的对象
+      // 如果构造函数返回了对象，则返回该对象；否则返回新创建的对象
+      return result instanceof Object ? result : obj;
+    }
+
+    function Person(name) {
+      this.name = name;
+    }
+    console.log(Person.prototype);//原型是Object
+    // console.log(Person.constructor);//构造函数是Function
+    let p = myNew(Person, '张三');
+    console.log(p);
+
+  </script>
+</body>
+
+</html>

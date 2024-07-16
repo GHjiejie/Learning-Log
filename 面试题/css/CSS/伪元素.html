@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<style>
+  p::selection {
+    background-color: red;
+    color: white;
+  }
+
+  p::first-letter {
+    font-size: 20px;
+    color: red;
+  }
+
+  p::first-line {
+    color: red;
+  }
+
+  input::placeholder {
+    color: red;
+
+    font-weight: bold;
+    padding: 10px;
+
+  }
+
+
+  input[type="file"]::file-selector-button {
+    background-color: none;
+    /* padding: 5px 10px; */
+    /* border: 1px solid blue; */
+    border-radius: 5px;
+  }
+</style>
+
+<body>
+  <p>先帝创业未半而中道崩殂，今天下三分，益州疲弊，此诚危急存亡之秋也。然侍卫之臣不懈于内，忠志之士忘身于外者，盖追先帝之殊遇，欲报之于陛下也。诚宜开张圣听，以光先帝遗德，恢弘志士之气，</p>
+  <input type="text" placeholder="hello">
+
+  <input type="file">
+</body>
+
+</html>

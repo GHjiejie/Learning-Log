@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <input type="text" name="" id="throttle">
+  <p id="throttleInputs"></p>
+  <script>
+    const throttleInput = document.getElementById('throttle');
+    const throttleInputs = document.getElementById('throttleInputs');
+    function throttle(fn, delay) {
+      let timer = null;
+      return function () {
+        // 判断，如果当前有定时器，那么就让当前的定时器执行下去，，不必再重新开启一个新的定时器
+        if (timer) {
+          return;
+        } else {
+          timer = setTimeout(() => {
+            fn();
+            // 当前的定时器执行完毕之后，清空定时器
+            timer = null;
+          }, delay)
+        }
+      }
+    }
+
+    throttleInput.addEventListener('input', throttle(function () {
+      throttleInputs.innerHTML = throttleInput.value;
+    }, 1000))
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function myInstaceof(obj, classObj) {
+      if (obj === null || obj === undefined) {
+        return false;
+      }
+      let proto = obj.__proto__;
+      let classObj_prototype = classObj.prototype;
+      while (true) {
+        if (proto === null) {
+          return false;
+        } if (proto === classObj_prototype) {
+          return true;
+        }
+        proto = proto.__proto__;
+      }
+    }
+    // 判断数组
+    // console.log(myInstaceof([], Array));
+    // 判断对象
+    // console.log(myInstaceof({}, Object));
+    // 判断函数
+    // console.log(myInstaceof(function () { }, Function));
+    // 判断字符串
+    // console.log(myInstaceof('hello', Object));
+    // 判断数字
+    // console.log(myInstaceof(123, Number));
+    // 判断布尔值
+    // console.log(myInstaceof(true, Boolean));
+    // 判断null
+    // console.log(myInstaceof(null, Object));
+    // console.log(null instanceof Object);
+
+  </script>
+</body>
+
+</html>

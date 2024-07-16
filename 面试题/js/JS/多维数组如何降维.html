@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    // 使用展开运算符将多维数组降维
+    // const arr = [1, 2, 3, [4, 5, 6]];
+    // const newArr = [].concat(...arr);
+    // console.log(newArr);
+
+    // 使用reduce
+    // 我们需要知道reduce的用法，reduce接收两个参数，第一个参数是一个回调函数，第二个参数是初始值
+    // const arr = [1, 2, 3, [4, 5, 6, 7]];
+    // const newArr = arr.reduce((acc, curr) => acc.concat(curr), []);//[]是初始值,acc是累加器，curr是当前值,由于指定1个初始值，所以acc的初始值是[]
+    // console.log(newArr);
+
+    // 使用flat
+    // const arr = [1, 2, 3, [4, 5, [6, 7, 8]]];
+    // const newArr = arr.flat(2);//由于我们是三维降到一维,所以depth为3
+    // console.log(newArr);//[1,2,3,4,5,6,7,8];
+
+    // 使用递归
+    // const arr = [1, 2, 3, [4, 5, [6, 7, [8, 9, 10]]]];
+    // function DR(array) {
+    //   return array.reduce((acc, curr) => acc.concat(Array.isArray(curr) ? DR(curr) : curr), []);
+    // }
+    // const newArr = DR(arr);
+    // console.log(newArr);
+  </script>
+</body>
+
+</html>

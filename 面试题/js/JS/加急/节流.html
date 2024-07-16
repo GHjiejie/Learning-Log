@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function throttle(fn, delay) {
+      // 定时器初始化为null，用于存储定时器的引用
+      let timer = null;
+      return function () {
+        if (!timer) {
+          timer = setTimeout(() => {
+            fn();
+            // 执行完毕后清空定时器，不然会一直执行
+            timer = null;
+          }, delay);
+        } else {
+          return;
+        }
+      }
+    }
+  </script>
+</body>
+
+</html>

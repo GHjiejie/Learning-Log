@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const target = {
+      name: 'jie'
+    }
+
+    const handler = {
+      set(trapTarget, key, value, reciver) {
+        //如果使用默认特性的话，我们可以直接使用以下代码
+        Reflect.set(trapTarget, key, value, reciver);
+        //如果不使用默认特性，那么就要重写特性
+        // if (Reflect.has(trapTarget, key)) {
+        //   console.log(`属性${key}已经存在！！！`);
+        // } else {
+        //   trapTarget[key] = value;
+        // }
+      }
+    }
+    const proxyObj = new Proxy(target, handler);
+
+    proxyObj.name = 'jiejie';//属性name已经存在！！！
+    proxyObj.age = 18;
+    console.log(proxyObj.age);
+    console.log(proxyObj.name);
+    console.log(target);
+  </script>
+</body>
+
+</html>

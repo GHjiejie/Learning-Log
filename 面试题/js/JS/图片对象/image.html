@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const imgArr = [
+      'https://p2.itc.cn/q_70/images03/20230902/721191166cd2465c9db74d5b52a3e7bc.png',
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcStKnBJl0DA6vqgkVL4eqeFrHVHRr-jJXAqSEQJxGxCOARHIgigLe1pXEopj3n2oDSt2e4&usqp=CAU',
+      'https://p2.itc.cn/q_70/images03/20230902/721191166cd2465c9db74d5b52a3e7bc.png'];
+    let currentIndex = 0;
+    function loadImage(url) {
+      return new Promise((reslove, reject) => {
+        //我们需要新建Image对象
+        const img = new Image();
+        //监听图片的加载,如果图片加载成功，那么就让当前的promise的状态变为fulfilled
+        img.onload = () => {
+          reslove(img);
+        };
+        //如果图片加载过程中出现问题，那么就报错
+        img.onerror = reject;
+        img.src = url;
+      })
+    }
+
+    function loadNextImg() {
+      if (currentIndex < imgArr.length) {
+        loadImage(imgArr[currentIndex])
+          .then((img) => {
+            document.body.appendChild(img);
+            currentIndex++;
+            loadNextImg();
+          }).catch((error) => {
+            throw new Error('图片加载失败')
+          })
+      }
+    }
+
+    loadNextImg();
+  </script>
+</body>
+
+</html>

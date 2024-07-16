@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const target = {
+      name: 'jie',
+    }
+
+    const handler = {
+      // 设置set陷阱函数,
+      set(trapTarget, key, value, recevier) {
+        // 逻辑不复杂，我们可以自己重建原始行为
+        // 判断目标对象中是否存在这个属性
+        if (Reflect.has(trapTarget, key)) {
+          console.log('属性已经存在在目标对象中');
+          return false;
+        } else {
+          //使用Reflect.set()方法将值设置到目标对象中
+          // return Reflect.set(trapTarget, key, value, recevier);
+
+          // 也可以直接使用下面的方法
+          trapTarget[key] = value;
+          console.log('属性不存在在目标对象中，已经添加成功');
+        }
+      }
+    };
+    const proxyObj = new Proxy(target, handler);
+    proxyObj.name = 'jiejie';
+    proxyObj.age = 18;
+    console.log(proxyObj);
+    console.log(target);
+  </script>
+</body>
+
+</html>

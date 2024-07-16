@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function Parent() {
+      this.name = 'parent';
+      this.sayHello = function () {
+        return 'parent_hello';
+      }
+    }
+
+    Parent.prototype.say = function () {
+      return 'hello,dsfjhuydg';
+    }
+
+    function Child() {
+      Parent.call(this);
+      this.age = 18;
+    }
+
+    const child1 = new Child();
+    const child2 = new Child();
+    const child3 = new Child();
+    child1.say = 'hellosdsds';
+    child2.say = 'world';
+    console.log(child1.say); //hello
+    console.log(child2.say); //world
+    console.log(child1.say);
+    // console.log(child3.say()); //parent_hello
+    // console.log(child1.age); //18
+    // console.log(child1.name); //parent
+    // console.log(child1.sayHello()); //hello
+    // console.log(child1.sayHello === child2.sayHello);//false
+    //console.log(child1.say());//报错，显示child1.say is not a function,这样就解决了所有的子类共享父类原型的问题
+
+
+  </script>
+</body>
+
+</html>

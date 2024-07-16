@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+
+<body>
+    <div class="box"></div>
+    <!-- throttle -->
+
+    <script>
+
+        const throttle = (fn, delay) => {
+            let timer = null;
+            return (...args) => {
+                if (timer) {
+                    return;
+                }
+                else {
+                    timer = setTimeout(() => {
+                        fn(...args);
+                        timer = null;
+                    }, delay);
+                }
+            }
+        }
+
+        document.addEventListener('mousemove', throttle((e) => {
+            const box = document.querySelector('.box');
+
+            box.innerHTML += `x:${e.clientX},y:${e.clientY}`;
+        }, 500));
+
+
+
+    </script>
+</body>
+
+</html>

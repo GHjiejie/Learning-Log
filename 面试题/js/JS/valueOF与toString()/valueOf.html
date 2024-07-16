@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+
+  <script>
+    //  基本数据类型
+    // const num1 = 666;
+    // console.log(num1.valueOf()); // 666
+
+    // const str = 'hello jie';
+    // console.log(str.valueOf()); // hello jie
+
+    // const bool = true;
+    // console.log(bool.valueOf()); // true
+
+    // 引用数据类型
+    const arr = [1, 2, 3];
+    console.log(arr.valueOf()); // [1, 2, 3]
+
+    const obj = {
+      value: 1,
+      valueOf: function () {
+        console.log('我被访问');
+        return this.value++;
+      }
+    };
+
+    if (obj == 1 && obj == 2 && obj == 3) {
+      console.log('条件成立');
+    }
+
+
+
+
+
+  </script>
+
+</body>
+
+</html>

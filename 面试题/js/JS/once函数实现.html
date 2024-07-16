@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function once(fn) {
+      let excuted = false;
+      return function (...args) {
+        if (!excuted) {
+          excuted = true;
+          return fn.apply(this, args);
+        }
+      }
+    }
+    const test = (a, b) => {
+      console.log(a + b);
+    }
+    const onceTest = once(test);
+    onceTest(3, 4);
+    onceTest(5, 6);
+
+  </script>
+</body>
+
+</html>

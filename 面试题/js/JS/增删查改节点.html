@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<style>
+  div {
+    width: 100px;
+    height: 100px;
+    background-color: red;
+
+  }
+</style>
+
+<body>
+  <button onclick="addChild()">点击我增加节点</button>
+  <button onclick="removeChild()">点击我删除节点</button>
+  <div class="box"></div>
+  <script>
+    // const button = document.querySelector('button');
+    // const addChild = () => {
+    //   // const div = document.createElement('div');
+    //   const div = document.createElement('div');
+
+    //   div.innerHTML = '我是新增的节点';
+    //   document.body.appendChild(div);
+    // }
+    // 删除节点
+
+    const box = document.querySelector('.box');
+    const testClone = box.cloneNode(true);
+    console.log(testClone);
+  </script>
+</body>
+
+</html>

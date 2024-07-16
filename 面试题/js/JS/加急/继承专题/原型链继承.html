@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function Parent() {
+      this.name = 'parent';
+      this.sayHello = function () {
+        return 'parent_hello';
+      }
+    }
+    Parent.prototype.say = function () {
+      return 'hello';
+    }
+
+    function Child() {
+      this.age = 18;
+    }
+    // 实现原型链继承的关键
+    Child.prototype = new Parent();
+
+    const child = new Child();
+    const child1 = new Child();
+    child.name = 'test';
+    console.log(child.name);//18
+    console.log(child1.name);//18
+    // console.log(child.age);//18
+    // console.log(child.name);//parent
+    // console.log(child.say());//hello
+    // console.log(child.say === child1.say);//true
+    // console.log(child.sayHello === child1.sayHello);//parent_hello
+
+
+  </script>
+</body>
+
+</html>

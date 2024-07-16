@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three Column Layout with Float</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .sidebar {
+            float: left;
+            width: 200px;
+            /* 左侧栏固定宽度 */
+            background-color: lightblue;
+        }
+
+        .sidebar2 {
+            float: right;
+            width: 200px;
+            /* 右侧栏固定宽度 */
+            background-color: lightcoral;
+
+        }
+
+        .main-content {
+            /* height: 50px; */
+            margin-left: 200px;
+            /* 留出左侧栏宽度 */
+            margin-right: 200px;
+            /* 留出右侧栏宽度 */
+            background-color: rgb(77, 87, 77);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="box">
+        <div class="sidebar">Left Sidebar</div>
+        <div class="sidebar2">Right Sidebar</div>
+        <div class="main-content">Main Content</div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    // 基本数据类型有七种：String、Number 、Boolean 、Null、undefined、Symbol、bigInt
+    // 那么哪些可以涉及自动装箱？
+
+    //1 字符串
+    const str = 'hello';
+    console.log(str.toString());
+
+    // 2、数字
+    const a = 8;
+    console.log(a.toString());
+
+    // 3.Boolean
+    const b = true;
+    console.log(b.toString());
+
+    // 4.null 实践发现null不可以自动装箱
+    // const c = null;
+    // console.log(c.toString());//报错
+
+    // 5、undefined 实践发现undefined不可以自动装箱
+
+    // 6、Symbol
+    const d = Symbol('foo');
+    console.log(d.toString());
+
+    // 7、bigInt
+    const e = 123n;
+    console.log(e.toString());
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+    }
+
+    .box {
+        /* overflow: hidden; */
+        display: flow-root;
+    }
+
+    .box1 {
+        width: 100px;
+        height: 100px;
+        background-color: red;
+        float: left;
+    }
+
+    .text {
+        width: 200px;
+        background-color: rgb(156, 156, 168);
+        display: flow-root;
+    }
+
+    .box2,
+    .box3,
+    .box4 {
+        width: 100px;
+        height: 100px;
+        background-color: blue;
+        margin: 10px;
+        position: absolute;
+    }
+
+    .container {
+        /* display: flow-root; */
+        /* display: flex; */
+        /* display: inline-block; */
+        /* overflow: auto; */
+        /* display: grid; */
+        position: absolute;
+
+    }
+</style>
+
+<body>
+    <h2>BFC理解</h2>
+    <!-- <h3>使用bfc解决过渡塌陷问题</h3> -->
+    <!-- <div class="box">
+        <div class="box1"></div>
+        <p class="text">我是p标签</p>
+
+    </div> -->
+    <!-- <div class="container"> -->
+    <div class="box2"></div>
+    <!-- </div> -->
+    <div style="clear: both;"></div>
+    <div class="box3"></div>
+    <div style="clear: both;"></div>
+    <div class="box4"></div>
+</body>
+
+</html>

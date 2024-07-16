@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<style>
+  .box {
+    width: 100px;
+    height: 100px;
+    background-color: red;
+    margin-top: 200px;
+    margin-left: 300px;
+  }
+</style>
+
+<body>
+  <div class="box"></div>
+</body>
+<script>
+  const box = document.querySelector('.box');
+  document.addEventListener('click', showPosition);
+  function showPosition(e) {
+    console.log(e.clientX, e.clientY);
+  }
+</script>
+
+</html>

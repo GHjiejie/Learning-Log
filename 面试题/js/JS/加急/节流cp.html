@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    // 节流的实现
+    function throttle(fn, delay) {
+      let timer = null;
+      return function (...args) {
+        if (timer) {
+          return;
+        } else {
+          timer = setTimeout(() => {
+            fn.apply(this, args);
+            timer = null;
+          })
+        }
+      }
+    }
+  </script>
+</body>
+
+</html>

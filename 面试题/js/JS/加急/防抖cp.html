@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    // 以下是防抖代码的简单实现
+    // function debounce(fn, delay) {
+    //   let timer = null;
+    //   return function (...args) {
+    //     if (timer) {
+    //       clearTimeout(timer);
+    //     } else {
+    //       timer = setTimeout(() => {
+    //         fn();
+    //       }, delay);
+    //     }
+    //   }
+    // }
+
+    // 代码的简化
+    function debounce(fn, delay) {
+      // 这个是timer的初始化,否则下面的定时器的清除会报错
+      let timer = null;
+      return function (...args) {
+        // 只要现在有定时器，我们就将其清除，因为这个是防抖的概念
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          fn();
+        }, delay);
+      }
+    }
+  </script>
+</body>
+
+</html>

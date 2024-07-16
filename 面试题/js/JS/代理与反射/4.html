@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const obj = {
+      name: 'jie',
+      apply(val) {
+        console.log(val);
+        return 'Hello ' + this.name;
+      }
+    }
+    const targetObj = {
+      age: 18
+    }
+    console.log(obj.apply());//Hello Jie
+
+    obj.apply(targetObj);
+    console.log(obj);//18
+    console.log(obj.age);
+
+
+  </script>
+</body>
+
+</html>

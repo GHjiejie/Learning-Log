@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    .original {
+        width: 50px;
+        height: 50px;
+        background-color: red;
+    }
+
+    .targetOne {
+        width: 100px;
+        margin-top: 200px;
+        margin-left: 200px;
+        height: 100px;
+        background-color: blue;
+    }
+
+    .targetTwo {
+        width: 100px;
+        margin-left: 400px;
+        height: 100px;
+        background-color: green;
+    }
+</style>
+
+<body>
+    <div class="original" draggable="true"></div>
+    <div class="targetOne"></div>
+    <div class="targetTwo"></div>
+
+</body>
+<script>
+    const original = document.querySelector('.original');
+    const targetOne = document.querySelector('.targetOne');
+    const targetTwo = document.querySelector('.targetTwo');
+
+    // 设置变量接受拖动元素
+    let dragged;
+    // 初始元素开始拖动
+    original.addEventListener('dragstart', (e) => {
+        dragged = e.target;
+        console.log(dragged);
+        console.log('dragstart');
+    });
+    // 元素拖动中
+    original.addEventListener('drag', () => {
+        console.log('drag');
+    });
+    // 元素拖动结束
+    original.addEventListener('dragend', () => {
+        console.log('dragend');
+    });
+    // 设置目标区域1
+    targetOne.addEventListener('dragenter', () => {
+        console.log('元素进入目标区域1');
+    });
+
+    // 在目标区域1中移动，需要阻止浏览器的默认行为，因为浏览器默认不允许在目标区域中放置元素
+    targetOne.addEventListener('dragover', (e) => {
+        console.log('元素在目标区域1中移动');
+        e.preventDefault();
+
+    });
+
+    targetOne.addEventListener('dragleave', () => {
+        console.log('元素离开目标区域1');
+    });
+
+    targetOne.addEventListener('drop', (e) => {
+        // 放置元素
+        e.preventDefault();
+        targetOne.appendChild(dragged);
+        console.log('元素在目标区域1中释放');
+    });
+
+    // 设置目标区域2
+    targetTwo.addEventListener('dragenter', () => {
+        console.log('元素进入目标区域2');
+    });
+
+    targetTwo.addEventListener('dragover', (e) => {
+        console.log('元素在目标区域2中移动');
+        e.preventDefault();
+    });
+
+    targetTwo.addEventListener('dragleave', () => {
+        console.log('元素离开目标区域2');
+    });
+
+    targetTwo.addEventListener('drop', () => {
+        console.log('元素在目标区域2中释放');
+        targetTwo.appendChild(dragged);
+
+    });
+
+
+
+</script>
+
+</html>

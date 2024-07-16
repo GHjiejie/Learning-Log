@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Example</title>
+</head>
+
+<body>
+
+    <script>
+        let socket = new WebSocket("wss://echo.websocket.org");
+
+        socket.onopen = function (event) {
+            console.log("Connected to WebSocket server");
+            socket.send("Hello, WebSocket Server!");
+        };
+
+        socket.onmessage = function (event) {
+            console.log("Received message: " + event.data);
+        };
+
+        socket.onclose = function (event) {
+            if (event.wasClean) {
+                console.log("WebSocket connection closed cleanly");
+            } else {
+                console.log("WebSocket connection closed with error: " + event.reason);
+            }
+        };
+
+        socket.onerror = function (error) {
+            console.error("WebSocket error: " + error.message);
+        };
+    </script>
+
+</body>
+
+</html>

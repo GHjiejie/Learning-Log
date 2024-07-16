@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const testObj = {
+      // 字符串
+      name: 'jie',
+      // 数字
+      age: 18,
+      // 数组
+      myArray: [1, 2, 3],
+      // 日期
+      myDate: new Date(),
+      // Symbol
+      mySymbol: Symbol('mySymbol'),
+      // 对象
+      bestFriend: {
+        name: 'xiaoming',
+        age: 19,
+        greet() {
+          return 'greet';
+        }
+      },
+      // 函数
+      say() {
+        return 'hello';
+      }
+    }
+    function deepCopy(obj) {
+      if (typeof obj == 'object' || obj === null) {
+        return obj;
+      }
+      let newObj = Array.isArray(obj) ? [] : {};
+
+      for (let key in obj) {
+        //确保只拷贝当前对象的属性，不考虑原型链上的属性
+        if (obj.hasownProperty(key)) {
+          //判断是否是对象,但是还是存在问题，比如正则，日期对象什么的，我们可以在上面优先判断或者在下面的if里面直接过滤
+          if (typeof obj[key] == 'object') {
+            //递归拷贝
+            newObj[key] == deepCopy(obj[key]);
+          } else {
+            newObj[key] == obj[key];
+          }
+        }
+      }
+      return newObj;
+    }
+    // 深拷贝数据
+
+    const copyObj = deepCopy(testObj);
+
+    console.log(testObj);
+    console.log(copyObj);
+  </script>
+</body>
+
+</html>

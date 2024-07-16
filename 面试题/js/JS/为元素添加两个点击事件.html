@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=
+  , initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div class="box" onclick="clickMe()">click me</div>
+  <script>
+    const box = document.querySelector('.box');
+    box.addEventListener('click', () => {
+      console.log('click');
+
+    });
+    box.addEventListener('click', () => {
+      console.log('click again');
+    });
+    function clickMe() {
+      console.log('click me');
+    }
+
+  </script>
+</body>
+
+</html>

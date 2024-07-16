@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const person = {
+      name: 'Jie',
+      age: 18,
+      greet() {
+        console.log('hello ');
+      }
+    }
+    // for (let key in person) {
+    //   console.log(key);
+    // }
+    // console.log(Reflect.ownKeys(person));
+    // console.log(Object.keys(person));
+
+    // Object.getOwnPropertyNames(person).forEach(key => {
+    //   console.log(key);
+    // })
+
+    const r = Object.entries(person);
+    console.log(r);
+
+  </script>
+</body>
+
+</html>

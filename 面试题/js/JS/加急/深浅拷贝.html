@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+
+    // 实现深拷贝的思路
+    // 1. 首先判断需要拷贝的数据是不是一个对象，如果不是对象直接返回，因为不需要拷贝，
+    // 2. 然后判断这个对象里面是否有这个键名，如果有，我们再判断这个键名是否是对象还是基本数据类型，如果不是基本数据类型，我们就需要递归调用这个函数
+    // 3. 最后返回一个新的对象
+
+    function deepCopy(obj) {
+      // 首先判断需要拷贝的数据是不是一个对象，如果不是对象直接返回，因为不需要拷贝，
+      if (typeof obj !== 'object' || obj == null) {
+        return obj;
+      }
+      let newObj = Array.isArray(obj) ? [] : {};
+      // 循环里面的每一个键名
+      for (let key in obj) {
+        // 判断这个对象里面是否有这个键名，如果有，我们再判断这个键名是否是对象还是基本数据类型，如果不是基本数据类型，我们就需要递归调用这个函数
+        if (obj.hasOwnProperty(key)) {
+          if (obj[key] && typeof obj[key] === 'object') {
+            newObj[key] = deepCopy(obj[key]);
+          } else {
+            newObj[key] = obj[key];
+          }
+        }
+      }
+      return newObj;
+    }
+
+    let obj = {
+      a: 1,
+      b: {
+        c: 2,
+        d: 3
+      }
+    }
+    const obj2 = deepCopy(obj);
+    console.log(obj);
+    console.log(obj2);
+  </script>
+</body>
+
+</html>

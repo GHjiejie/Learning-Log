@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IntersectionObserver Test</title>
+  <style>
+    img {
+      width: 600px;
+      height: 300px;
+      object-fit: cover;
+      opacity: 0;
+      transition: all 0.5s ease-in-out;
+    }
+
+    .show {
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <img src="" alt=""
+      data-src="https://images.pexels.com/photos/45201/kitty-cat-kitten-pet-45201.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2">
+    <img src="" alt=""
+      data-src="https://images.pexels.com/photos/104827/cat-pet-animal-domestic-104827.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2">
+    <img src="" alt=""
+      data-src="https://images.pexels.com/photos/416160/pexels-photo-416160.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2">
+    <img src="" alt=""
+      data-src="https://images.pexels.com/photos/1170986/pexels-photo-1170986.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2">
+    <img src="" alt=""
+      data-src="https://images.pexels.com/photos/57416/cat-sweet-kitty-animals-57416.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2">
+  </main>
+
+  <script>
+    const images = document.querySelectorAll('img');
+
+    const options = {
+      root: null,//根元素
+      rootMargin: '0px',//偏移量：元素进入视口时的偏移量
+      threshold: 0.5 // 阈值:取值范围0-1,0表示当元素刚进入时就触发回调函数,1表示元素完全进入视口时触发回调函数
+    }
+
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const img = entry.target;
+        img.src = img.dataset.src;
+        img.classList.add('show');
+        // 删除观察目标，减少性能浪费
+        observer.unobserve(img);
+      })
+    }, options);
+
+    // 监听所有的图片
+    images.forEach(image => {
+      observer.observe(image);
+    })
+
+
+  </script>
+</body>
+
+</html>

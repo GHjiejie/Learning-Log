@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    function deepCopy(obj) {
+      if (typeof obj !== 'object' || obj === null) {
+        // 如果不是对象或者为null，直接返回
+        return obj;
+      }
+
+      // 如果是日期对象，直接返回新的日期对象
+      if (obj instanceof Date) {
+        return new Date(obj.getTime());
+      }
+      // 如果是正则对象，直接返回新的正则对象
+      if (obj instanceof RegExp) {
+        return new RegExp(obj);
+      }
+
+      // 创建一个新的对象
+      const newObj = Array.isArray(obj) ? [] : {};
+
+      // 递归地复制对象的每个属性
+      for (let key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          newObj[key] = deepCopy(obj[key]);
+        }
+      }
+
+      return newObj;
+    }
+
+
+    // 测试
+    const originalObj = {
+      // 字符串
+      name: 'jie',
+      // 数字
+      age: 18,
+      // 数组
+      myArray: [1, 2, 3],
+      // 日期
+      myDate: new Date(),
+      // 正则
+      myReg: /hello/,
+      // 对象
+      bestFriend: {
+        name: 'xiaoming',
+        age: 19
+      },
+      // 函数
+      say() {
+        return 'hello';
+      }
+    }
+    const copiedObj = deepCopy(originalObj);
+
+    console.log(originalObj); // 输出原始对象
+    console.log(copiedObj); // 输出深拷贝后的对象
+
+  </script>
+</body>
+
+</html>

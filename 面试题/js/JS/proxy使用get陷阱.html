@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const target = {
+      name: 'jie'
+    }
+    // const handler = {
+    //   get(trapTarget, key, receiver) {
+    //     if (key in trapTarget) {
+    //       console.log('属性已经存在在目标对象中');
+    //       return trapTarget[key]
+    //     } else {
+    //       return 'no such property'
+    //     }
+    //   }
+    // }
+    const handler = {
+      get(trapTarget, key, recevier) {
+        if (!(key in trapTarget)) {
+          throw new Error('no such property')
+        }
+        return Reflect.get(trapTarget, key, recevier);
+      }
+    }
+    const proxyObj = new Proxy(target, handler);
+
+    console.log(proxyObj.name);
+    console.log(proxyObj.age);
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dialog Box with ::backdrop Example</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<style>
+  dialog::backdrop {
+    background-color: rgba(210, 9, 9, 0.5);
+  }
+
+  /* Style for the dialog */
+  dialog {
+    width: 300px;
+    padding: 20px;
+    border: 2px solid #333;
+    background-color: white;
+  }
+</style>
+
+<body>
+
+  <button id="openDialog">Open Dialog</button>
+
+  <dialog id="myDialog">
+    <p>This is a dialog box.</p>
+    <button id="closeDialog">Close</button>
+  </dialog>
+
+  <script>
+    document.getElementById('openDialog').addEventListener('click', function () {
+      document.getElementById('myDialog').showModal();
+    });
+
+    document.getElementById('closeDialog').addEventListener('click', function () {
+      document.getElementById('myDialog').close();
+    });
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="parent">
+    <div id="child">Click me</div>
+  </div>
+
+</body>
+<script>
+  const parent = document.getElementById('parent');
+  const child = document.getElementById('child');
+
+  // 捕获阶段事件处理程序
+  parent.addEventListener('click', function (event) {
+    console.log('捕获阶段 - Parent Element Clicked');
+  }, true); // 设置为true，表示在捕获阶段触发
+
+  // 冒泡阶段事件处理程序
+  child.addEventListener('click', function (event) {
+    console.log('冒泡阶段 - Child Element Clicked');
+  });
+
+  parent.addEventListener('click', function (event) {
+    console.log('冒泡阶段 - Parent Element Clicked');
+  });
+
+  // 其他父元素事件处理程序（冒泡阶段）
+  document.body.addEventListener('click', function (event) {
+    console.log('冒泡阶段 - Body Element Clicked');
+  });
+
+</script>
+
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<style>
+  .box1 {
+    width: 100px;
+    height: 100px;
+    background-color: red;
+    margin-top: 200px;
+    margin-left: 300px;
+  }
+
+  .box2 {
+    width: 100px;
+    height: 100px;
+    background-color: blue;
+    margin-top: 200px;
+    margin-left: 500px;
+
+  }
+</style>
+
+<body>
+  <div class="box1">mouseover</div>
+  <div class="box2">mouseenter</div>
+</body>
+<script>
+  const box1 = document.querySelector('.box1');
+  box1.addEventListener('mouseover', showPosition);
+  function showPosition(e) {
+    console.log(e.clientX, e.clientY);
+  }
+
+  const box2 = document.querySelector('.box2');
+  box2.addEventListener('mouseenter', showPosition);
+  function showPosition(e) {
+    console.log(e.clientX, e.clientY);
+  }
+</script>
+
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Geolocation Example</title>
+</head>
+
+<body>
+
+    <p id="location">Waiting for location...</p>
+
+    <script>
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                console.log(position);
+                var latitude = position.coords.latitude;
+                var longitude = position.coords.longitude;
+                var accuracy = position.coords.accuracy;
+                var altitude = position.coords.altitude;
+                var timestamp = new Date(position.timestamp).toLocaleString();
+
+                document.getElementById('location').innerHTML = `
+            Latitude: ${latitude}<br>
+            Longitude: ${longitude}<br>
+            Accuracy: ${accuracy} meters<br>
+            Altitude: ${altitude ? altitude + ' meters' : 'N/A'}<br>
+            Timestamp: ${timestamp}
+        `;
+            }, function (error) {
+                document.getElementById('location').innerHTML = 'Error getting location: ' + error.message;
+            });
+        } else {
+            document.getElementById('location').innerHTML = 'Geolocation is not supported by this browser.';
+        }
+    </script>
+
+</body>
+
+</html>

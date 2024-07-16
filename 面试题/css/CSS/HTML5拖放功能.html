@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Drag and Drop Example</title>
+    <style>
+        body {
+            /* Prevent the user selecting text in the example */
+            user-select: none;
+        }
+
+        #draggable {
+            text-align: center;
+            background: white;
+        }
+
+        .dropzone {
+            width: 200px;
+            height: 20px;
+            background: blueviolet;
+            margin: 10px;
+            padding: 10px;
+        }
+
+        .dropzone.dragover {
+            background-color: purple;
+        }
+
+        .dragging {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dropzone">
+        <div id="draggable" draggable="true">This div is draggable</div>
+    </div>
+    <div class="dropzone" id="droptarget"></div>
+
+    <script>
+        let dragged;
+
+        /* events fired on the draggable target */
+        const source = document.getElementById("draggable");
+        source.addEventListener("drag", (event) => {
+            console.log("dragging");
+        });
+
+        source.addEventListener("dragstart", (event) => {
+            // store a ref. on the dragged elem
+            dragged = event.target;
+            console.log(dragged);
+            // make it half transparent
+            event.target.classList.add("dragging");
+        });
+
+        source.addEventListener("dragend", (event) => {
+            // reset the transparency
+            event.target.classList.remove("dragging");
+        });
+
+        /* events fired on the drop targets */
+        const target = document.getElementById("droptarget");
+        target.addEventListener(
+            "dragover",
+            (event) => {
+                // prevent default to allow drop
+                event.preventDefault();
+            },
+            false,
+        );
+
+        target.addEventListener("dragenter", (event) => {
+            console.log('元素进入目标区域');
+            // highlight potential drop target when the draggable element enters it
+            if (event.target.classList.contains("dropzone")) {
+                event.target.classList.add("dragover");
+            }
+        });
+
+        target.addEventListener("dragleave", (event) => {
+            console.log('元素离开目标区域');
+            // reset background of potential drop target when the draggable element leaves it
+            if (event.target.classList.contains("dropzone")) {
+                event.target.classList.remove("dragover");
+            }
+        });
+
+        target.addEventListener("drop", (event) => {
+            console.log('元素可以在目标区域放置');
+            // prevent default action (open as link for some elements)
+            event.preventDefault();
+            // move dragged element to the selected drop target
+            if (event.target.classList.contains("dropzone")) {
+                event.target.classList.remove("dragover");
+                event.target.appendChild(dragged);
+            }
+        });
+
+
+
+    </script>
+</body>
+
+</html>

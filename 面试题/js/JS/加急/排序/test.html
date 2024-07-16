@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const arr = [1, 2, 4, 6, 7, 2, 4, 6];
+    function quickSort(arr) {
+      const length = arr.length;
+      if (length == 0) {
+        // console.log('length <= 0');
+        return arr;
+      } else {
+        const pivot = arr[0];
+        const left = [];
+        const right = [];
+        for (let i = 1; i < length; i++) {
+          if (arr[i] < pivot) {
+            left.push(arr[i])
+          } else {
+            right.push(arr[i])
+
+          }
+        }
+        return [...quickSort(left), pivot, ...quickSort(right)];
+      }
+    }
+    console.log(quickSort(arr));
+  </script>
+</body>
+
+</html>

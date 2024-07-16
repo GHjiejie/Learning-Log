@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    // const number = 1;
+    // console.log(number.constructor === Number);
+    // const str = 'hello';
+    // console.log(str.constructor === String);
+    // const Person = new Function();
+    // console.log(Person.constructor === Function);
+    // const obj = {};
+    // console.log(obj.constructor === Object);
+    // const arr = [];
+    // console.log(arr.constructor === Array);
+    // // 判断正则
+    // const reg = new RegExp();
+    // console.log(reg.constructor === RegExp);
+    // // 判断日期
+    // const date = new Date();
+    // console.log(date.constructor === Date);
+
+    // 缺点：随意修改constructor属性，会导致判断失效
+    const arr = [];
+    arr.constructor = Number;
+    // console.log(arr);
+
+    console.log(arr.constructor === Array); //false
+    console.log(arr.constructor === Number); //true
+
+
+  </script>
+</body>
+
+</html>

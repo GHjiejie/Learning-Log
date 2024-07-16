@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <script>
+    const testObj = {
+      name: 'Jie',
+      age: 18,
+      testArr: [1, 2, 3],
+      testDate: new Date(),
+      friend: {
+        myFriend: testObj,//循环引用,会报错
+        name: 'XiaoMing',
+        age: 19
+      },
+      say() {
+        return 'hello';
+      }
+    }
+
+    function deepCopy(obj) {
+      if (typeof obj != 'object' || obj === null) {
+        return obj;
+      }
+
+      let newObj = Array.isArray(obj) ? [] : {};
+
+      for (let key in obj) {
+        if (Reflect.has(obj, key)) {
+          if (typeof obj[key] == 'object') {
+            newObj[key] = deepCopy(obj[key]);
+          } else {
+            newObj[key] = obj[key]
+          }
+        }
+      }
+      return newObj;
+    }
+    const newObj = deepCopy(testObj);
+    console.log(newObj);
+  </script>
+</body>
+
+</html>
