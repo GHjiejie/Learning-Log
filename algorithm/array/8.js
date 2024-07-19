@@ -7,7 +7,9 @@ var backspaceCompare = function (s, t) {
   return exec(s) === exec(t);
 };
 
-function exec(str) {}
+function exec(str) {
+    
+}
 
 const s = "ab#c";
 const t = "ad#c";
