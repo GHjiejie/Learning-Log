@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta ch****t="UTF-8" />
+  <title>JavaScript 链表示例</title>
+</head>
+
+<body>
+  <script>
+    // 定义链表节点的构造函数
+    function ListNode(data) {
+      this.data = data; // 节点数据
+      this.next = null; // 下一个节点的指针，默认为空
+    }
+
+    // 创建链表的函数
+    function createLinkedList() {
+      var head = null; // 链表头指针
+
+      // 插入节点的函数
+      function insertNode(data) {
+        var newNode = new ListNode(data);
+        if (head === null) {
+          // 如果链表为空，直接将头指针指向新节点
+          head = newNode;
+        } else {
+          // 遍历链表，找到最后一个节点
+          var currentNode = head;
+          while (currentNode.next !== null) {
+            currentNode = currentNode.next;
+          }
+          // 将新节点添加到最后一个节点的后面
+          currentNode.next = newNode;
+        }
+      }
+
+      // 删除节点的函数
+      function deleteNode(data) {
+        if (head === null) {
+          return; // 链表为空，直接返回
+        }
+        if (head.data === data) {
+          // 如果要删除的节点是头节点
+          head = head.next; // 将头指针指向下一个节点
+          return;
+        }
+        var currentNode = head;
+        var prevNode = null;
+        while (currentNode !== null && currentNode.data !== data) {
+          prevNode = currentNode;
+          currentNode = currentNode.next;
+        }
+        if (currentNode === null) {
+          return; // 没有找到要删除的节点
+        }
+        // 将前一个节点的指针跳过当前节点，指向下一个节点
+        prevNode.next = currentNode.next;
+      }
+
+      // 遍历链表的函数
+      function traverseLinkedList() {
+        var currentNode = head;
+        while (currentNode !== null) {
+          console.log(currentNode.data);
+          currentNode = currentNode.next;
+        }
+      }
+
+      return {
+        insertNode,
+        deleteNode,
+        traverseLinkedList,
+      };
+    }
+
+    // 创建一个链表实例
+    var linkedList = createLinkedList();
+
+    // 插入节点
+    linkedList.insertNode("星辰");
+    linkedList.insertNode("迷上");
+    linkedList.insertNode("大海");
+
+    // 删除节点
+    linkedList.deleteNode("迷上");
+
+    // 遍历链表
+    linkedList.traverseLinkedList();
+  </script>
+</body>
+
+</html>

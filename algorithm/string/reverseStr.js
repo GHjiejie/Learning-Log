@@ -4,12 +4,15 @@
  * @return {string}
  */
 var reverseStr = function (s, k) {
-  //  const newS=Array.from(s)
-  let newS = [];
-  const arrlength = Math.floor((s.length % 2) * k);
-  for (let i = 0; i < arrlength; i++) {
-    newS.push(s.slice());
+  let newS = s.split("");
+  for (let i = 0; i < s.length; i += 2 * k) {
+    let left = i - 1;
+    let right = i + k > s.length ? s.length : i + k;
+    while (++left < --right) {
+      [newS[left], newS[right]] = [newS[right], newS[left]];
+    }
   }
+  return newS.join("");
 };
 
 const s = "abcdefg";
