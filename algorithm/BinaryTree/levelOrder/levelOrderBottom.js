@@ -31,7 +31,6 @@ var levelOrderBottom = function (root) {
     while (fastIndex > slowIndex) {
       [arr[fastIndex], arr[slowIndex]] = [arr[slowIndex], arr[fastIndex]];
       slowIndex++;
-      f;
       fastIndex--;
     }
     return arr;

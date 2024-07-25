@@ -10,6 +10,8 @@
  * @param {TreeNode} root
  * @return {number}
  */
+
+// 递归实现最大深度
 var maxDepth = function (root) {
   if (root === null) {
     return 0;
@@ -23,20 +25,23 @@ var maxDepth = function (root) {
     return Math.max(leftDepth, rightDepth) + 1;
   }
   return dfs(root);
-  // function dfs(node, currentLength) {
-  //   let length = currentLength;
-  //   if (node.right && node.left) {
-  //     let leftDepth = dfs(node.left, length);
-  //     let rightDepth = dfs(node.right, length);
-  //     let maxDepth = rightDepth > leftDepth ? rightDepth : leftDepth;
-  //     length += maxDepth;
-  //   } else {
-  //     length++;
-  //   }
-  //   return length;
-  // }
-  // let leftDepth = dfs(root.left, 1);
-  // let rightDepth = dfs(root.right, 1);
-  // let maxDepth = rightDepth > leftDepth ? rightDepth : leftDepth;
-  // return maxDepth;
 };
+
+// 迭代实现最大深度
+function maxDepth_two(root) {
+  if (!root) {
+    return 0;
+  }
+  let depth = 0;
+  let queue = [root];
+  while (queue.length) {
+    let length = queue.length;
+    for (let i = 0; i < length; i++) {
+      let node = queue.shift();
+      node.left && queue.push(node.left);
+      node.right && queue.push(node.right);
+    }
+    ++depth;
+  }
+  return depth;
+}
