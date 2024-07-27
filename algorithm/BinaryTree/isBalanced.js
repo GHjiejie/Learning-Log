@@ -14,25 +14,17 @@
 // 深度，就是反过来看，根节点深度是1
 var isBalanced = function (root) {
   if (!root) return true;
-  if (!root.left || !root.right) {
-    return false;
+  function isMirror(left, right) {
+    if (!left && !right) {
+      return true;
+    }
+    if ((!left && right) || (left && !right)) {
+      return false;
+    }
+    if (left.val !== right.val) {
+      return false;
+    }
+    return isMirror(left.left, right.right) && isMirror(left.right, right.left);
   }
-
-  let left = root.left;
-  let right = root.right;
-  let leftDepth = 0;
-  let rightDepth = 0;
-  while (left) {
-    left = left.left;
-    leftDepth++;
-  }
-  while (right) {
-    right = right.right;
-    rightDepth++;
-  }
-  if (Math.abs(rightDepth - leftDepth) <= 1) {
-    return true;
-  } else {
-    return false;
-  }
+  return isMirror(root.left, root.right);
 };
