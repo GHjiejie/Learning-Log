@@ -44,4 +44,8 @@ const n = 4;
 const k = 2;
 
 // console.log(combine(n, k));
-console.log(combinationSum3(3, 9));
+// console.log(combinationSum3(3, 9));
+
+const candidates = [10, 1, 2, 7, 6, 1, 5];
+const target = 8;
+console.log(combinationSum2(candidates, target));

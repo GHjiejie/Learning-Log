@@ -5,12 +5,13 @@
 
 var findSubsequences = function (nums) {
   let res = [];
-  function backTrace(index, combination) {
+  function backTrace(startIndex, combination) {
     if (combination.length > 1) {
       res.push([...combination]);
     }
-    for (let i = index; i < nums.length; i++) {
-      if (i > index && nums[i] == nums[i - 1]) {
+    let used = new Set();
+    for (let i = startIndex; i < nums.length; i++) {
+      if (used.has(nums[i])) {
         continue;
       }
       if (
@@ -19,6 +20,7 @@ var findSubsequences = function (nums) {
       ) {
         continue;
       }
+      used.add(nums[i]);
       combination.push(nums[i]);
       backTrace(i + 1, combination);
       combination.pop();
