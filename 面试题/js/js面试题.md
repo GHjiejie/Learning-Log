@@ -1,3 +1,7 @@
+---
+
+---
+
 #### 1、js的数据类型有哪些，他们有什么区别？
 
 基本数据类型：String、Number、boolean、BigInt、null、undefined、Symbol
@@ -903,19 +907,81 @@ class是ES6新提出来的关键字，用于定义一个类，extends用于对�
 
 在 JavaScript 中，原型和原型链是理解面向对象编程的重要概念。它们用于实现继承和代码复用。
 
-### 原型 (Prototype)
+##### 原型 (Prototype)
 
 - 每个 JavaScript 对象都有一个原型对象，可以通过 `__proto__` 属性访问。
 - 原型对象也是一个对象，它包含了可以被该对象继承的属性和方法。
 - 当访问一个对象的属性或方法时，如果该对象自身没有定义，就会沿着原型链向上查找，直到找到为止。
 
-### 原型链 (Prototype Chain)
+##### 原型链 (Prototype Chain)
 
 - 原型链是由一系列原型对象组成的链式结构。
 - 每个对象的原型对象都指向它的构造函数的原型对象，而构造函数的原型对象又指向其构造函数的原型对象，以此类推，直到指向 `null` 为止。
 - 当访问一个对象的属性或方法时，JavaScript 引擎会沿着原型链向上查找，直到找到该属性或方法为止。如果最终没有找到，则返回 `undefined`。
 
+#### 56、npm 、yarn 与pnpm有什么区别？
 
+57里面详细说了
+
+[pnpm 是凭什么对 npm 和 yarn 降维打击的](https://juejin.cn/post/7127295203177676837?from=search-suggest)
+
+[幽灵依赖所引出的知识！](https://juejin.cn/post/7226610046833442872)
+
+[幽灵依赖是什么，pnpm出现的意义](https://blog.csdn.net/weixin_59816940/article/details/131395326?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-0-131395326-blog-140209460.235^v43^pc_blog_bottom_relevance_base9&spm=1001.2101.3001.4242.1&utm_relevant_index=1)
+
+#### 57 .什么是幽灵依赖，怎么解决幽灵依赖?
+
+比如有以下情况，项目安装了包A，包A里面有的功能依赖于包B，我们并没有在项目里面显示安装包B,但是却可以使用包B的功能，这种情况就是幽灵依赖。
+
+我们总结的说，就是  在项目里面使用了，**但是没有在 `package.json`里面显示声明的依赖**！
+
+##### 示例说明
+
+举个例子来说，比如你要初始化一个vue项目，你需要使用 `npm`或者其他的包管理工具去安装 `vue`，这个时候就会在你运行的目录下生成一个 `node_mouldes`，按照常规来说，我的 `package-json`里面的 `dependencies`只有 `vue`这一个包的定义，但是你实际打开 `node_mouldes`，你会发现，里面有许多其他的包，这些包我们并没有在 
+
+`package-json`里面定义，为什么却下载了呢？？？
+
+**最新包管理工具全部使用便扁平化，导致幽灵依赖无法避免**
+
+是因为 `vue`这个包内部依赖其他包，比如A,然后包A又依赖包B........，我们在执行 `npm i vue`的时候，就是将其所依赖的所有包全部下载安装，同时扁平化，全部放到 `node_mouldes`文件夹下面，这里我们就要理解什么是扁平化，在了解之前我们需要了解 npm 、yarn、pnpm的发展历史。
+
+##### npm发展历史于yarn和pnpm的引入
+
+在早期的npm（npm < 3）时，如果我的package-json里面定义了包A和包B，我们在执行npm i 的时候就会去下载他们的依赖，比如A里面依赖C和D,B里面依赖C和E,那么我们在node_modules里面看到的依赖包的文件夹实际只有两个，一个是A,一个是B,但是A和B目录下面还又node_moudles,里面又C和D等，这个时候我们就会发现其实C这个包被安装了两次，如果我们其他的包里面还依赖了C这个包，那么实际上就一直在重复操作，也就是说C这个包会被反复安装，这样就会浪费极大的内存资源（如果项目非常大的话。(可以借助二叉树来辅助思考，每一个根节点是你package-json里面定义的依赖包，下面的分支是这个依赖包所依赖的包，每个节点都是独立的)
+
+所以 `faceBook`就开发了 `yarn`这个包管理工具，那么这个这个管理工具的优点相比于之前的npm是什么呢？就是实现扁平化，yarn团队将这些依赖全部放在node_module下，如果我们其他的包依赖的包已经在node_module下时，就不会再去重新下载这个包了，如果从树的角度去思考的话，就是说这个树的高度只有2。
+
+后面npm团队也使用了这种扁平化的想法(npm > 3)，（实际上里面其实还有嵌套的node_moudles,因为一个包是可能有多个版本的，提升只能提升一个，所以后面再遇到相同包的不同版本，依然还是用嵌套的方式。）但是他们都有一个问题，那就是**幽灵依赖**
+
+那么如何去解决幽灵依赖呢？
+
+我们可以使用pnpm这个包管理工具,我们可以使用npm安装一下vue，然后看一下node_modules文件夹，
+
+这个文件夹下面只有 `.pnpm .modules.yaml 和你在package-json里面的依赖包的名称（或者说项目的直接依赖） `，
+
+这个时候我们需要理解这三个文件的作用
+
+**`./node_modules/.pnpm`:virture store 就是我们所说的虚拟store**
+
+**`.modules.yaml`:配置文件，里面记录了虚拟store的位置，全局store的位置，需要注意，全局store一般是存储在本地的文件夹里面的，这个文件是有说明的**
+
+**`package-json定义的直接依赖包`**
+
+虚拟store里面的依赖包是直接存放在全局store的，都是这些包的依赖包是通过软连接来实现相互依赖的
+
+也就是说，所有的依赖都是从全局 store 硬连接到了 node_modules/.pnpm 下，然后之间通过软链接来相互依赖。
+
+**所以我们使用pnpm这个包管理工具就可以解决幽灵依赖与重复下载相同的包的问题**
+
+![](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/326a2090786e4d16b2d6fce25e876680~tplv-k3u1fbpfcp-zoom-in-crop-mark:1512:0:0:0.awebp?)
+
+![](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/93da1a4ff7a0465d83afb4eee88e9464~tplv-k3u1fbpfcp-zoom-in-crop-mark:1512:0:0:0.awebp?)
+
+幽灵依赖的缺点：
+
+- 如果包A更新后移除了对包B的引入，但是自己的项目里面还是使用到了包B的某些功能，那么就会导致代码报错。
+
+怎么解决幽灵依赖？
 
 
 
