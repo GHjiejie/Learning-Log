@@ -1,0 +1,3205 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>report.html</title>
+    <style>body {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  /* do not increase min-width as some may use split screens */
+  min-width: 800px;
+  color: #999;
+}
+
+h1 {
+  font-size: 24px;
+  color: black;
+}
+
+h2 {
+  font-size: 16px;
+  color: black;
+}
+
+p {
+  color: black;
+}
+
+a {
+  color: #999;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+/******************************
+ * SUMMARY INFORMATION
+ ******************************/
+#environment td {
+  padding: 5px;
+  border: 1px solid #E6E6E6;
+}
+#environment tr:nth-child(odd) {
+  background-color: #f6f6f6;
+}
+
+/******************************
+ * TEST RESULT COLORS
+ ******************************/
+span.passed,
+.passed .col-result {
+  color: green;
+}
+
+span.skipped,
+span.xfailed,
+span.rerun,
+.skipped .col-result,
+.xfailed .col-result,
+.rerun .col-result {
+  color: orange;
+}
+
+span.error,
+span.failed,
+span.xpassed,
+.error .col-result,
+.failed .col-result,
+.xpassed .col-result {
+  color: red;
+}
+
+/******************************
+ * RESULTS TABLE
+ *
+ * 1. Table Layout
+ * 2. Extra
+ * 3. Sorting items
+ *
+ ******************************/
+/*------------------
+ * 1. Table Layout
+ *------------------*/
+#results-table {
+  border: 1px solid #e6e6e6;
+  color: #999;
+  font-size: 12px;
+  width: 100%;
+}
+#results-table th,
+#results-table td {
+  padding: 5px;
+  border: 1px solid #E6E6E6;
+  text-align: left;
+}
+#results-table th {
+  font-weight: bold;
+}
+
+/*------------------
+ * 2. Extra
+ *------------------*/
+.log {
+  background-color: #e6e6e6;
+  border: 1px solid #e6e6e6;
+  color: black;
+  display: block;
+  font-family: "Courier New", Courier, monospace;
+  height: 230px;
+  overflow-y: scroll;
+  padding: 5px;
+  white-space: pre-wrap;
+}
+.log:only-child {
+  height: inherit;
+}
+
+div.image {
+  border: 1px solid #e6e6e6;
+  float: right;
+  height: 240px;
+  margin-left: 5px;
+  overflow: hidden;
+  width: 320px;
+}
+div.image img {
+  width: 320px;
+}
+
+div.video {
+  border: 1px solid #e6e6e6;
+  float: right;
+  height: 240px;
+  margin-left: 5px;
+  overflow: hidden;
+  width: 320px;
+}
+div.video video {
+  overflow: hidden;
+  width: 320px;
+  height: 240px;
+}
+
+.collapsed {
+  display: none;
+}
+
+.expander::after {
+  content: " (show details)";
+  color: #BBB;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.collapser::after {
+  content: " (hide details)";
+  color: #BBB;
+  font-style: italic;
+  cursor: pointer;
+}
+
+/*------------------
+ * 3. Sorting items
+ *------------------*/
+.sortable {
+  cursor: pointer;
+}
+
+.sort-icon {
+  font-size: 0px;
+  float: left;
+  margin-right: 5px;
+  margin-top: 5px;
+  /*triangle*/
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+}
+.inactive .sort-icon {
+  /*finish triangle*/
+  border-top: 8px solid #E6E6E6;
+}
+.asc.active .sort-icon {
+  /*finish triangle*/
+  border-bottom: 8px solid #999;
+}
+.desc.active .sort-icon {
+  /*finish triangle*/
+  border-top: 8px solid #999;
+}
+</style></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    let visibleString = getQueryParameter('visible') || 'all';
+    visibleString = visibleString.toLowerCase();
+    const checkedItems = visibleString.split(',');
+
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++) {
+        filterItems[i].hidden = false;
+
+        if (visibleString != 'all') {
+            filterItems[i].checked = checkedItems.includes(filterItems[i].getAttribute('data-test-result'));
+            filterTable(filterItems[i]);
+        }
+    }
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>report.html</h1>
+    <p>Report generated on 02-Aug-2024 at 02:13:04 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.2.0</p>
+    <h2>Environment</h2>
+    <table id="environment">
+      <tr>
+        <td>Config</td>
+        <td>nova_mini_test_biren</td></tr>
+      <tr>
+        <td>Product</td>
+        <td>test</td></tr>
+      <tr>
+        <td>Python</td>
+        <td>3.10.14</td></tr>
+      <tr>
+        <td>Tags</td>
+        <td></td></tr></table>
+    <h2>Summary</h2>
+    <p>21 tests ran in 34.05 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">20 passed</span>, <input checked="true" class="filter" data-test-result="skipped" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">6 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">1 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th>Description</th>
+          <th class="sortable" col="name">Test</th>
+          <th>Param</th>
+          <th class="sortable" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="6">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td>  获取当前安全配置信息. </td>
+          <td>test_api_SecurityLevelGet</td>
+          <td></td>
+          <td class="col-duration">0.83</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_SecurityLevelGet.postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log">self = &lt;test_console_api.TestConsoleApi object at 0x7fde35472fb0&gt;<br/>config_obj = {&#x27;_ext&#x27;: {&#x27;ConfigExtra.test_data&#x27;: [], &#x27;EnvInfo.service.env&#x27;: &#x27;biren&#x27;, &#x27;EnvInfo.service.host&#x27;: &#x27;10.151.35.12&#x27;, &#x27;EnvInf...h&#x27;: &#x27;/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230&#x27;, &#x27;config_yaml&#x27;: &#x27;nova_mini_test_biren&#x27;}<br/>ConsoleApi = &lt;defines.console.console_service_business.ConsoleSwaggerBusiness object at 0x7fde352b7c10&gt;<br/><br/>    def test_api_SecurityLevelGet(self, config_obj, ConsoleApi):<br/>        &quot;&quot;&quot;  获取当前安全配置信息. &quot;&quot;&quot;<br/>        resp = ConsoleApi.SecurityLevelGetGetApi()<br/>&gt;       assert resp.status_code == 200<br/><span class="error">E       assert Expected:200, Actual:500 (Should be equal)</span><br/><br/>testcase/test_console/console/api/test_console_api.py:211: AssertionError<br/> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_SecurityLevelGet开始
+INFO     root:conftest.py:32 parse digit:383767
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;imT0EGS4lt8GzaguHcql&quot;,
+  &quot;captcha_value&quot;: &quot;383767&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:52 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:362
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk3Mn0.evqfTuaFNJIWTPCSaynxFnxbH_oCcpEzKJCWyh5xpRU&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================SecurityLevelGet:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;SecurityLevelGet
+INFO     root:log_utils.py:51 请求URL：[get]http://10.151.35.12:30080/v1/security/level
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk3Mn0.evqfTuaFNJIWTPCSaynxFnxbH_oCcpEzKJCWyh5xpRU
+INFO     root:log_utils.py:51 Status_code：500 Reason: Internal Server Error, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:177
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:52 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:9
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 13,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;failed to get https level info with err(the server could not find the requested resource (get ingresses.extensions console-backend-ingress))&quot;
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_SecurityLevelGet.postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_SecurityLevelGet.postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_SecurityLevelGet结束<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td>  创建用户Credential(AK/SK) </td>
+          <td>test_api_UserJWTCredentialNew</td>
+          <td></td>
+          <td class="col-duration">0.00</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserJWTCredentialNew.postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log">(&#x27;/root/jenkinshome/CI/autotest/testcase/test_console/console/api/test_console_api.py&#x27;, 138, &#x27;Skipped: https才运行&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td>  罗列用户API Key. </td>
+          <td>test_api_UserJWTCredentialList</td>
+          <td>page_offset-0</td>
+          <td class="col-duration">0.00</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserJWTCredentialList[page_offset-0].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log">(&#x27;/root/jenkinshome/CI/autotest/testcase/test_console/console/api/test_console_api.py&#x27;, 146, &#x27;Skipped: https才运行&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td>  罗列用户API Key. </td>
+          <td>test_api_UserJWTCredentialList</td>
+          <td>page_limit-10</td>
+          <td class="col-duration">0.00</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserJWTCredentialList[page_limit-10].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log">(&#x27;/root/jenkinshome/CI/autotest/testcase/test_console/console/api/test_console_api.py&#x27;, 146, &#x27;Skipped: https才运行&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td>  罗列用户API Key. </td>
+          <td>test_api_UserJWTCredentialList</td>
+          <td>page_total-100</td>
+          <td class="col-duration">0.00</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserJWTCredentialList[page_total-100].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log">(&#x27;/root/jenkinshome/CI/autotest/testcase/test_console/console/api/test_console_api.py&#x27;, 146, &#x27;Skipped: https才运行&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td>  删除 User JWT Credential. </td>
+          <td>test_api_UserJWTCredentialDelete</td>
+          <td></td>
+          <td class="col-duration">0.00</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserJWTCredentialDelete.postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log">(&#x27;/root/jenkinshome/CI/autotest/testcase/test_console/console/api/test_console_api.py&#x27;, 165, &#x27;Skipped: https才运行&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="skipped results-table-row">
+        <tr>
+          <td class="col-result">Skipped</td>
+          <td>  生成或刷新用户API Key. </td>
+          <td>test_api_GenUserAPIKey</td>
+          <td></td>
+          <td class="col-duration">0.00</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_GenUserAPIKey.postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log">(&#x27;/root/jenkinshome/CI/autotest/testcase/test_console/console/api/test_console_api.py&#x27;, 187, &#x27;Skipped: https才运行&#x27;)<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  生成验证码id. </td>
+          <td>test_api_GenerateCaptcha</td>
+          <td></td>
+          <td class="col-duration">1.71</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_GenerateCaptcha.postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_GenerateCaptcha开始
+INFO     root:conftest.py:32 parse digit:18843
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;UvYjQRIcHx3vrq0I5kM5&quot;,
+  &quot;captcha_value&quot;: &quot;18843&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:30 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:7
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:8503
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;wqhq0iuDLAhFVcBjAOcc&quot;,
+  &quot;captcha_value&quot;: &quot;8503&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:31 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:9
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:674107
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;rIw5Pjt38p873mqGy9o5&quot;,
+  &quot;captcha_value&quot;: &quot;674107&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.47s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:32 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:406
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1Mn0.aojYnVgoq7iwyYR24oCBsxzF8f-JPhow0qMxwaEWUsA&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================GenerateCaptcha:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;GenerateCaptcha
+INFO     root:log_utils.py:51 请求URL：[get]http://10.151.35.12:30080/v1/captchas
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1Mn0.aojYnVgoq7iwyYR24oCBsxzF8f-JPhow0qMxwaEWUsA
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:37
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:32 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:7
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;captcha_id&quot;: &quot;XaBifygn3KL06sqBDlLy&quot;
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_GenerateCaptcha.postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_GenerateCaptcha.postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_GenerateCaptcha结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  新增用户. </td>
+          <td>test_api_UserNew</td>
+          <td>test0001-Test@0001</td>
+          <td class="col-duration">1.28</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserNew[test0001-Test@0001].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserNew开始
+INFO     root:conftest.py:32 parse digit:38842
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;tciuv3XH6qBoODwqz8fp&quot;,
+  &quot;captcha_value&quot;: &quot;38842&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:32 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:477025
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;Adhfa6HJamD89Uu4ORDI&quot;,
+  &quot;captcha_value&quot;: &quot;477025&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.44s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:33 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:375
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1M30.D9UYjsGbflGSAMYCx6SK2bTPVobxZF_IOrpHiC3NFNE&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> ------------------------------Captured stdout call------------------------------ <br/>Encrypted Data: e0b2b53384e8703ed4ffea2ba1397003
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserNew:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserNew
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/users
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1M30.D9UYjsGbflGSAMYCx6SK2bTPVobxZF_IOrpHiC3NFNE
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;e0b2b53384e8703ed4ffea2ba1397003&quot;,
+  &quot;role&quot;: &quot;UR_ADMIN_USER&quot;,
+  &quot;username&quot;: &quot;test0001&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.1s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:214
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:33 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:40
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;user&quot;: {
+    &quot;created_time&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;id&quot;: &quot;146&quot;,
+    &quot;password&quot;: &quot;e0b2b53384e8703ed4ffea2ba1397003&quot;,
+    &quot;role&quot;: &quot;UR_ADMIN_USER&quot;,
+    &quot;sub_roles&quot;: [],
+    &quot;token&quot;: &quot;&quot;,
+    &quot;updated_time&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;username&quot;: &quot;test0001&quot;
+  }
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserNew[test0001-Test@0001].postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserNew[test0001-Test@0001].postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserNew结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  新增用户. </td>
+          <td>test_api_UserNew</td>
+          <td>test0002-Test@0002</td>
+          <td class="col-duration">2.12</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserNew[test0002-Test@0002].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserNew开始
+INFO     root:conftest.py:32 parse digit:5279
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;TYHZzXCoNOcBwIq5Sxt6&quot;,
+  &quot;captcha_value&quot;: &quot;5279&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:33 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:35892
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;qpH6DA9UqDLbQUJHK4UY&quot;,
+  &quot;captcha_value&quot;: &quot;35892&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:34 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:9
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:7979
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;tb3f6vP865I2K9qJZfOm&quot;,
+  &quot;captcha_value&quot;: &quot;7979&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:34 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:880605
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;Oixc64qQbm8L5W0Q6q9M&quot;,
+  &quot;captcha_value&quot;: &quot;880605&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.46s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:35 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:392
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1NX0.jO1EwbyU0pHd9fjsNG9S0T0Q6kA_YqyKNP_sjPc0okE&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> ------------------------------Captured stdout call------------------------------ <br/>Encrypted Data: 665c2f9b22aa6f0a593af55510c8968c
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserNew:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserNew
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/users
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1NX0.jO1EwbyU0pHd9fjsNG9S0T0Q6kA_YqyKNP_sjPc0okE
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;665c2f9b22aa6f0a593af55510c8968c&quot;,
+  &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+  &quot;username&quot;: &quot;test0002&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.09s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:215
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:35 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:26
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;user&quot;: {
+    &quot;created_time&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;id&quot;: &quot;147&quot;,
+    &quot;password&quot;: &quot;665c2f9b22aa6f0a593af55510c8968c&quot;,
+    &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+    &quot;sub_roles&quot;: [],
+    &quot;token&quot;: &quot;&quot;,
+    &quot;updated_time&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;username&quot;: &quot;test0002&quot;
+  }
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserNew[test0002-Test@0002].postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserNew[test0002-Test@0002].postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserNew结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  新增用户. </td>
+          <td>test_api_UserNew</td>
+          <td>test0003-Test@0003</td>
+          <td class="col-duration">0.83</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserNew[test0003-Test@0003].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserNew开始
+INFO     root:conftest.py:32 parse digit:500236
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;gaRIfYkHvyQuLonSwts3&quot;,
+  &quot;captcha_value&quot;: &quot;500236&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:36 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:367
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1Nn0.jI383vO1oZ09kASaDzJGu7bGPfi-y616obs36Gy9sbg&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> ------------------------------Captured stdout call------------------------------ <br/>Encrypted Data: 889410da6c3252cb46c6607b0ad60d25
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserNew:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserNew
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/users
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1Nn0.jI383vO1oZ09kASaDzJGu7bGPfi-y616obs36Gy9sbg
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;889410da6c3252cb46c6607b0ad60d25&quot;,
+  &quot;role&quot;: &quot;UR_UNKNOWN&quot;,
+  &quot;username&quot;: &quot;test0003&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:94
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:36 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:4
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;rpc error: code = InvalidArgument desc = invalid user.role&quot;
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserNew[test0003-Test@0003].postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserNew[test0003-Test@0003].postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserNew结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  新增用户. </td>
+          <td>test_api_UserNew</td>
+          <td>test0004-Test@0004</td>
+          <td class="col-duration">1.25</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserNew[test0004-Test@0004].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserNew开始
+INFO     root:conftest.py:32 parse digit:741861
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;1WltpUoGh7pq7Z4G7Npk&quot;,
+  &quot;captcha_value&quot;: &quot;741861&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:36 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:135477
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;T04DQ25aOn7RgYOIpTeb&quot;,
+  &quot;captcha_value&quot;: &quot;135477&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:37 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:368
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1N30.jgO8rnEK-EUSvYCE3iMNL2QXkc0a9HJJvuwd6xx0pzI&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> ------------------------------Captured stdout call------------------------------ <br/>Encrypted Data: 4508c82bf88023d572576dbfd2f7f699
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserNew:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserNew
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/users
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1N30.jgO8rnEK-EUSvYCE3iMNL2QXkc0a9HJJvuwd6xx0pzI
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;4508c82bf88023d572576dbfd2f7f699&quot;,
+  &quot;username&quot;: &quot;test0004&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:94
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:37 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:4
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;rpc error: code = InvalidArgument desc = invalid user.role&quot;
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserNew[test0004-Test@0004].postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserNew[test0004-Test@0004].postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserNew结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  查询指定用户信息. </td>
+          <td>test_api_UserGet</td>
+          <td></td>
+          <td class="col-duration">1.77</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserGet.postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserGet开始
+INFO     root:conftest.py:32 parse digit:87093
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;eMW4eeMsm9qJTePWihh0&quot;,
+  &quot;captcha_value&quot;: &quot;87093&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:38 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:9
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:550
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;TY2QlcukqAIYj7WrMasL&quot;,
+  &quot;captcha_value&quot;: &quot;550&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:38 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:779796
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;ozATIvdvcLSi43iDGTCW&quot;,
+  &quot;captcha_value&quot;: &quot;779796&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.46s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:39 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:394
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1OX0.lDKKLzYGMjRI9fQ-mQytSUdVjVGHBlpyU_AdGYp-hdk&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> ------------------------------Captured stdout call------------------------------ <br/>Encrypted Data: e0b2b53384e8703ed4ffea2ba1397003
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserNew:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserNew
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/users
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1OX0.lDKKLzYGMjRI9fQ-mQytSUdVjVGHBlpyU_AdGYp-hdk
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;e0b2b53384e8703ed4ffea2ba1397003&quot;,
+  &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+  &quot;username&quot;: &quot;test00010&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.09s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:216
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:39 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:25
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;user&quot;: {
+    &quot;created_time&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;id&quot;: &quot;148&quot;,
+    &quot;password&quot;: &quot;e0b2b53384e8703ed4ffea2ba1397003&quot;,
+    &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+    &quot;sub_roles&quot;: [],
+    &quot;token&quot;: &quot;&quot;,
+    &quot;updated_time&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;username&quot;: &quot;test00010&quot;
+  }
+}
+INFO     root:log_utils.py:51 
+
+====================UserGet:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserGet
+INFO     root:log_utils.py:51 请求URL：[get]http://10.151.35.12:30080/v1/users/148
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk1OX0.lDKKLzYGMjRI9fQ-mQytSUdVjVGHBlpyU_AdGYp-hdk
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:204
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:39 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:9
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;user&quot;: {
+    &quot;created_time&quot;: &quot;2024-08-02T02:12:39Z&quot;,
+    &quot;id&quot;: &quot;148&quot;,
+    &quot;password&quot;: &quot;&quot;,
+    &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+    &quot;sub_roles&quot;: [
+      &quot;user-normal-policy&quot;
+    ],
+    &quot;token&quot;: &quot;&quot;,
+    &quot;updated_time&quot;: &quot;2024-08-02T02:12:39Z&quot;,
+    &quot;username&quot;: &quot;test00010&quot;
+  }
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserGet.postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserGet.postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserGet结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  搜索用户. </td>
+          <td>test_api_UserList</td>
+          <td>page_offset-0</td>
+          <td class="col-duration">0.85</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserList[page_offset-0].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserList开始
+INFO     root:conftest.py:32 parse digit:153590
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;USUIV739lYIpUdIAkpsk&quot;,
+  &quot;captcha_value&quot;: &quot;153590&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:40 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:362
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2MH0.blL1xtKQHOlw11S9pACahKAQpmeK3zJckzEh_jStSY0&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserList:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserList
+INFO     root:log_utils.py:51 请求URL：[get]http://10.151.35.12:30080/v1/users?page.offset=0&amp;page.limit=5&amp;page.total=20
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2MH0.blL1xtKQHOlw11S9pACahKAQpmeK3zJckzEh_jStSY0
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:823
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:40 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:9
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;page&quot;: {
+    &quot;limit&quot;: 5,
+    &quot;offset&quot;: 0,
+    &quot;total&quot;: 4
+  },
+  &quot;users&quot;: [
+    {
+      &quot;created_time&quot;: &quot;2024-07-30T09:15:02Z&quot;,
+      &quot;id&quot;: &quot;1&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_ADMIN_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-admin-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:40Z&quot;,
+      &quot;username&quot;: &quot;admin&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:33Z&quot;,
+      &quot;id&quot;: &quot;146&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_ADMIN_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-admin-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:33Z&quot;,
+      &quot;username&quot;: &quot;test0001&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:36Z&quot;,
+      &quot;id&quot;: &quot;147&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-normal-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:36Z&quot;,
+      &quot;username&quot;: &quot;test0002&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:39Z&quot;,
+      &quot;id&quot;: &quot;148&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-normal-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:39Z&quot;,
+      &quot;username&quot;: &quot;test00010&quot;
+    }
+  ]
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserList[page_offset-0].postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserList[page_offset-0].postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserList结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  搜索用户. </td>
+          <td>test_api_UserList</td>
+          <td>page_limit-10</td>
+          <td class="col-duration">0.83</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserList[page_limit-10].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserList开始
+INFO     root:conftest.py:32 parse digit:701681
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;1bPzDKdDa888akNYw3Ak&quot;,
+  &quot;captcha_value&quot;: &quot;701681&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:41 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:362
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2MX0.bKzHsOJYb0PPGhfacw9qbV37vUCdvjopdzFovtym1q4&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserList:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserList
+INFO     root:log_utils.py:51 请求URL：[get]http://10.151.35.12:30080/v1/users?page.offset=0&amp;page.limit=10&amp;page.total=20
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2MX0.bKzHsOJYb0PPGhfacw9qbV37vUCdvjopdzFovtym1q4
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:824
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:41 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:10
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;page&quot;: {
+    &quot;limit&quot;: 10,
+    &quot;offset&quot;: 0,
+    &quot;total&quot;: 4
+  },
+  &quot;users&quot;: [
+    {
+      &quot;created_time&quot;: &quot;2024-07-30T09:15:02Z&quot;,
+      &quot;id&quot;: &quot;1&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_ADMIN_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-admin-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:41Z&quot;,
+      &quot;username&quot;: &quot;admin&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:33Z&quot;,
+      &quot;id&quot;: &quot;146&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_ADMIN_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-admin-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:33Z&quot;,
+      &quot;username&quot;: &quot;test0001&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:36Z&quot;,
+      &quot;id&quot;: &quot;147&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-normal-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:36Z&quot;,
+      &quot;username&quot;: &quot;test0002&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:39Z&quot;,
+      &quot;id&quot;: &quot;148&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-normal-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:39Z&quot;,
+      &quot;username&quot;: &quot;test00010&quot;
+    }
+  ]
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserList[page_limit-10].postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserList[page_limit-10].postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserList结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  搜索用户. </td>
+          <td>test_api_UserList</td>
+          <td>page_total-100</td>
+          <td class="col-duration">0.82</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserList[page_total-100].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserList开始
+INFO     root:conftest.py:32 parse digit:683594
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;2lTmAbZMGq7lV8bgCena&quot;,
+  &quot;captcha_value&quot;: &quot;683594&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:41 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:362
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2MX0.bKzHsOJYb0PPGhfacw9qbV37vUCdvjopdzFovtym1q4&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserList:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserList
+INFO     root:log_utils.py:51 请求URL：[get]http://10.151.35.12:30080/v1/users?page.offset=0&amp;page.limit=5&amp;page.total=100
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2MX0.bKzHsOJYb0PPGhfacw9qbV37vUCdvjopdzFovtym1q4
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:823
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:41 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:11
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;page&quot;: {
+    &quot;limit&quot;: 5,
+    &quot;offset&quot;: 0,
+    &quot;total&quot;: 4
+  },
+  &quot;users&quot;: [
+    {
+      &quot;created_time&quot;: &quot;2024-07-30T09:15:02Z&quot;,
+      &quot;id&quot;: &quot;1&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_ADMIN_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-admin-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:42Z&quot;,
+      &quot;username&quot;: &quot;admin&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:33Z&quot;,
+      &quot;id&quot;: &quot;146&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_ADMIN_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-admin-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:33Z&quot;,
+      &quot;username&quot;: &quot;test0001&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:36Z&quot;,
+      &quot;id&quot;: &quot;147&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-normal-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:36Z&quot;,
+      &quot;username&quot;: &quot;test0002&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:39Z&quot;,
+      &quot;id&quot;: &quot;148&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-normal-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:39Z&quot;,
+      &quot;username&quot;: &quot;test00010&quot;
+    }
+  ]
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserList[page_total-100].postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserList[page_total-100].postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserList结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  删除指定用户. </td>
+          <td>test_api_UserDelete</td>
+          <td></td>
+          <td class="col-duration">0.97</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserDelete.postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserDelete开始
+INFO     root:conftest.py:32 parse digit:951423
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;Zu8sNfL8UIl70QvXex2E&quot;,
+  &quot;captcha_value&quot;: &quot;951423&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:42 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:364
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2Mn0.w24rlakiG5FTgbgp1atel1FpeZ9vigC4KP0bakLZiuE&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> ------------------------------Captured stdout call------------------------------ <br/>Encrypted Data: e0b2b53384e8703ed4ffea2ba1397003
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserNew:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserNew
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/users
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2Mn0.w24rlakiG5FTgbgp1atel1FpeZ9vigC4KP0bakLZiuE
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;e0b2b53384e8703ed4ffea2ba1397003&quot;,
+  &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+  &quot;username&quot;: &quot;test00011&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.09s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:216
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:42 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:23
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;user&quot;: {
+    &quot;created_time&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;id&quot;: &quot;149&quot;,
+    &quot;password&quot;: &quot;e0b2b53384e8703ed4ffea2ba1397003&quot;,
+    &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+    &quot;sub_roles&quot;: [],
+    &quot;token&quot;: &quot;&quot;,
+    &quot;updated_time&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;username&quot;: &quot;test00011&quot;
+  }
+}
+INFO     root:log_utils.py:51 
+
+====================UserDelete:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserDelete
+INFO     root:log_utils.py:51 请求URL：[delete]http://10.151.35.12:30080/v1/users/149
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2Mn0.w24rlakiG5FTgbgp1atel1FpeZ9vigC4KP0bakLZiuE
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.1s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:2
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:42 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:37
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserDelete.postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserDelete.postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserDelete结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  重置用户密码. </td>
+          <td>test_api_UserPasswordReset</td>
+          <td></td>
+          <td class="col-duration">0.94</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserPasswordReset.postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserPasswordReset开始
+INFO     root:conftest.py:32 parse digit:606062
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;vZm7LTvgysT9acWZ4kac&quot;,
+  &quot;captcha_value&quot;: &quot;606062&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:43 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:362
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2M30.5HJIF4TLWykymZw0NKfN8V6gs-TgUtPGbFrWUfuaVuE&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> ------------------------------Captured stdout call------------------------------ <br/>Encrypted Data: e0b2b53384e8703ed4ffea2ba1397003
+Encrypted Data: 665c2f9b22aa6f0a593af55510c8968c
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserNew:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserNew
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/users
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2M30.5HJIF4TLWykymZw0NKfN8V6gs-TgUtPGbFrWUfuaVuE
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;e0b2b53384e8703ed4ffea2ba1397003&quot;,
+  &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+  &quot;username&quot;: &quot;test00013&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.09s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:216
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:43 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:25
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;user&quot;: {
+    &quot;created_time&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;id&quot;: &quot;150&quot;,
+    &quot;password&quot;: &quot;e0b2b53384e8703ed4ffea2ba1397003&quot;,
+    &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+    &quot;sub_roles&quot;: [],
+    &quot;token&quot;: &quot;&quot;,
+    &quot;updated_time&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;username&quot;: &quot;test00013&quot;
+  }
+}
+INFO     root:log_utils.py:51 
+
+====================UserPasswordReset:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserPasswordReset
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/users/150/password
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2M30.5HJIF4TLWykymZw0NKfN8V6gs-TgUtPGbFrWUfuaVuE
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;665c2f9b22aa6f0a593af55510c8968c&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:2
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:43 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:9
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserPasswordReset.postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserPasswordReset.postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserPasswordReset结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  修改用户密码. </td>
+          <td>test_api_UserPasswordUpdate</td>
+          <td></td>
+          <td class="col-duration">2.10</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserPasswordUpdate.postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserPasswordUpdate开始
+INFO     root:conftest.py:32 parse digit:89290
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;X2FRr543BlQni2oVytPJ&quot;,
+  &quot;captcha_value&quot;: &quot;89290&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:44 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:628866
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;upu9Ge9ikeL49zAJv0hM&quot;,
+  &quot;captcha_value&quot;: &quot;628866&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.42s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:45 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:361
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2NX0.LAHEcRNaK9jKy9ZBrI1UNokvr-zeEbYWnAauHOtCfEw&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> ------------------------------Captured stdout call------------------------------ <br/>Encrypted Data: 228c3f78012bcbd205d228072d8bde7e
+b&#x27;$2b$12$M3vDxMCkQDUSv5URX4j3z.KGEliZgqqnIJ1I0HT1DbUzeyeIXY2uy&#x27;
+Encrypted Data: e0b2b53384e8703ed4ffea2ba1397003
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserNew:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserNew
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/users
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2NX0.LAHEcRNaK9jKy9ZBrI1UNokvr-zeEbYWnAauHOtCfEw
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;228c3f78012bcbd205d228072d8bde7e&quot;,
+  &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+  &quot;username&quot;: &quot;test00014&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.09s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:216
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:45 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:22
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;user&quot;: {
+    &quot;created_time&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;id&quot;: &quot;151&quot;,
+    &quot;password&quot;: &quot;228c3f78012bcbd205d228072d8bde7e&quot;,
+    &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+    &quot;sub_roles&quot;: [],
+    &quot;token&quot;: &quot;&quot;,
+    &quot;updated_time&quot;: &quot;0001-01-01T00:00:00Z&quot;,
+    &quot;username&quot;: &quot;test00014&quot;
+  }
+}
+INFO     root:log_utils.py:51 
+
+====================UserPasswordUpdate:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserPasswordUpdate
+INFO     root:log_utils.py:51 请求URL：[put]http://10.151.35.12:30080/v1/users/151/password
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2NX0.LAHEcRNaK9jKy9ZBrI1UNokvr-zeEbYWnAauHOtCfEw
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;new_password&quot;: &quot;e0b2b53384e8703ed4ffea2ba1397003&quot;,
+  &quot;old_password&quot;: &quot;$2b$12$M3vDxMCkQDUSv5URX4j3z.KGEliZgqqnIJ1I0HT1DbUzeyeIXY2uy&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.44s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:2
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:46 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:371
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserPasswordUpdate.postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserPasswordUpdate.postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserPasswordUpdate结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  验证用户信息. </td>
+          <td>test_api_UserVerify</td>
+          <td></td>
+          <td class="col-duration">3.20</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserVerify.postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserVerify开始
+INFO     root:conftest.py:32 parse digit:57866
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;DoKXXspbAX3asaXQ91LY&quot;,
+  &quot;captcha_value&quot;: &quot;57866&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:46 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:06438
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;DRN3BPKVIk1g1wLGRvRZ&quot;,
+  &quot;captcha_value&quot;: &quot;06438&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:46 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:7
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:9234
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;H9uaOOvZYSGMIOZBZUxv&quot;,
+  &quot;captcha_value&quot;: &quot;9234&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:47 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:7
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:17856
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;IX7Wglyda9jEi6LnuC4U&quot;,
+  &quot;captcha_value&quot;: &quot;17856&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:47 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:7
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:069728
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;IkddSiGco4sjqfQsQd6D&quot;,
+  &quot;captcha_value&quot;: &quot;069728&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:48 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:365
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2OH0.f6ds3swWZTLZ6Ln47I6g_2Lg4SOLEdI_QGYVNbpqagc&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> ------------------------------Captured stdout call------------------------------ <br/>b&#x27;$2b$12$SJy47P/HFb37tU6H5RfaDufz7jMSzR0HCe28Ya/8S2pHELnIRmOEe&#x27;
+<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserVerify:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserVerify
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/users/test0002/verify
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk2OH0.f6ds3swWZTLZ6Ln47I6g_2Lg4SOLEdI_QGYVNbpqagc
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;$2b$12$SJy47P/HFb37tU6H5RfaDufz7jMSzR0HCe28Ya/8S2pHELnIRmOEe&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.42s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:196
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:49 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:353
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjE0NywiVXNlck5hbWUiOiJ0ZXN0MDAwMiIsIlJvbGUiOiJVUl9OT1JNQUxfVVNFUiIsImV4cCI6MTcyMjYwNzk2OX0.wcwqpwkkr2FUzWj8lFsmU7dW2WRThSJmxfOWqCfE3W8&quot;
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserVerify.postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserVerify.postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserVerify结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  basic_auth for kong plugin. </td>
+          <td>test_api_KongAuthorization</td>
+          <td>username-admin</td>
+          <td class="col-duration">0.84</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_KongAuthorization[username-admin].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_KongAuthorization开始
+INFO     root:conftest.py:32 parse digit:338084
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;qSGVTi3Mqgkyh0gQH79b&quot;,
+  &quot;captcha_value&quot;: &quot;338084&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.44s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:50 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:373
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk3MH0.EFVFVLmRy9EM9y91NRCz841HaezwcNY7411x4nO48OU&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================KongAuthorization:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;KongAuthorization
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/kong/authorization
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk3MH0.EFVFVLmRy9EM9y91NRCz841HaezwcNY7411x4nO48OU
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;Console1@&quot;,
+  &quot;service_name&quot;: &quot;AAAAA&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:2
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:50 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:5
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_KongAuthorization[username-admin].postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_KongAuthorization[username-admin].postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_KongAuthorization结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  basic_auth for kong plugin. </td>
+          <td>test_api_KongAuthorization</td>
+          <td>username-test0002</td>
+          <td class="col-duration">0.84</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_KongAuthorization[username-test0002].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_KongAuthorization开始
+INFO     root:conftest.py:32 parse digit:172301
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;I6iSE8s3clRus2SdsmX2&quot;,
+  &quot;captcha_value&quot;: &quot;172301&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:50 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:369
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk3MH0.EFVFVLmRy9EM9y91NRCz841HaezwcNY7411x4nO48OU&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================KongAuthorization:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;KongAuthorization
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/kong/authorization
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk3MH0.EFVFVLmRy9EM9y91NRCz841HaezwcNY7411x4nO48OU
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;Console1@&quot;,
+  &quot;service_name&quot;: &quot;AAAAA&quot;,
+  &quot;username&quot;: &quot;test0002&quot;
+}
+INFO     root:log_utils.py:51 Status_code：401 Reason: Unauthorized, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:115
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Www-Authenticate:only the admin account is allowed to operate while your role is UR_NORMAL_USER
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:50 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:4
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 16,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;only the admin account is allowed to operate while your role is UR_NORMAL_USER&quot;
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_KongAuthorization[username-test0002].postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_KongAuthorization[username-test0002].postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_KongAuthorization结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  basic_auth for kong plugin. </td>
+          <td>test_api_KongAuthorization</td>
+          <td>username-testtttttt</td>
+          <td class="col-duration">0.83</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_KongAuthorization[username-testtttttt].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_KongAuthorization开始
+INFO     root:conftest.py:32 parse digit:989096
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;M9Eyi74lvqCTQ0OTluzr&quot;,
+  &quot;captcha_value&quot;: &quot;989096&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.42s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:51 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:361
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk3MX0.kgb96RX-j3tgO6tccJTB5WbwQHFhsWY2H31O762fg2w&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================KongAuthorization:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;KongAuthorization
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/kong/authorization
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk3MX0.kgb96RX-j3tgO6tccJTB5WbwQHFhsWY2H31O762fg2w
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;password&quot;: &quot;Console1@&quot;,
+  &quot;service_name&quot;: &quot;AAAAA&quot;,
+  &quot;username&quot;: &quot;testtttttt&quot;
+}
+INFO     root:log_utils.py:51 Status_code：404 Reason: Not Found, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:89
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:51 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:3
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 5,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;get user info from db failed with err(user not found)&quot;
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_KongAuthorization[username-testtttttt].postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_KongAuthorization[username-testtttttt].postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_KongAuthorization结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  设置当前安全配置. </td>
+          <td>test_api_SecurityLevelSet</td>
+          <td>level-0</td>
+          <td class="col-duration">1.20</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_SecurityLevelSet[level-0].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_SecurityLevelSet开始
+INFO     root:conftest.py:32 parse digit:047519
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;J4fpuA3NdSIcBRrgIo6L&quot;,
+  &quot;captcha_value&quot;: &quot;047519&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:53 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:361
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk3M30.6R6o_KBNcQ_W8tE2qGjKRvUbKT-95zhRL_9qI7wA2bQ&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================SecurityLevelSet:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;SecurityLevelSet
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/security/level
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk3M30.6R6o_KBNcQ_W8tE2qGjKRvUbKT-95zhRL_9qI7wA2bQ
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;level&quot;: &quot;0&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.41s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:2
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:53 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:346
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_SecurityLevelSet[level-0].postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_SecurityLevelSet[level-0].postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_SecurityLevelSet结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  设置当前安全配置. </td>
+          <td>test_api_SecurityLevelSet</td>
+          <td>level-4</td>
+          <td class="col-duration">1.25</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_SecurityLevelSet[level-4].postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_SecurityLevelSet开始
+INFO     root:conftest.py:32 parse digit:4674
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;WEu3tEaqMhxzGh0kmMEA&quot;,
+  &quot;captcha_value&quot;: &quot;4674&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:54 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:855176
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;gAbhqBHls9ImYPhoFeEK&quot;,
+  &quot;captcha_value&quot;: &quot;855176&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:55 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:366
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk3NX0.OzDF5-oMVlF2XldgNZ21fiG7HIFdZtR9pBTbAP8dTEY&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================SecurityLevelSet:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;SecurityLevelSet
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/security/level
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk3NX0.OzDF5-oMVlF2XldgNZ21fiG7HIFdZtR9pBTbAP8dTEY
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;level&quot;: &quot;4&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:76
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:55 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:5
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid level(4), level should be 0 or 1&quot;
+}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_SecurityLevelSet[level-4].postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_SecurityLevelSet[level-4].postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_SecurityLevelSet结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  删除所有创建的指定用户. </td>
+          <td>test_api_UserDelete_002</td>
+          <td></td>
+          <td class="col-duration">7.90</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserDelete_002.postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserDelete_002开始
+INFO     root:conftest.py:32 parse digit:47920
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;Ly9pyxYXjDDE2EI6lgJ6&quot;,
+  &quot;captcha_value&quot;: &quot;47920&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.14s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:55 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:78
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:74755
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;eYxAhQcJqMiMfkjEjZfm&quot;,
+  &quot;captcha_value&quot;: &quot;74755&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:56 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:76119
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;gpU83mGKCRxK0orPyCoG&quot;,
+  &quot;captcha_value&quot;: &quot;76119&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:56 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:7
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:33870
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;seco3V3HGMbusL05uQ7n&quot;,
+  &quot;captcha_value&quot;: &quot;33870&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:56 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:90568
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;jczuoibtHiI9l607swva&quot;,
+  &quot;captcha_value&quot;: &quot;90568&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:57 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:1369
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;nYMTMsFFTkRZdvjDKrku&quot;,
+  &quot;captcha_value&quot;: &quot;1369&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:57 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:4011
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;U9MSR0PyW521oVO3tx4r&quot;,
+  &quot;captcha_value&quot;: &quot;4011&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:58 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:9
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:03612
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;46nwJDQn8k3ezui1N4bS&quot;,
+  &quot;captcha_value&quot;: &quot;03612&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:58 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:970231
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;kqc8kfskKNSAH0Rd5IaY&quot;,
+  &quot;captcha_value&quot;: &quot;970231&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:58 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:7
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:98638
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;tkWGr8OOnZvgWNngs0Pk&quot;,
+  &quot;captcha_value&quot;: &quot;98638&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:59 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:7156
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;52EwdXoZRWzLWATrc7Ef&quot;,
+  &quot;captcha_value&quot;: &quot;7156&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:12:59 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:513
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;x6vnB6IROM4n3OPZrNAK&quot;,
+  &quot;captcha_value&quot;: &quot;513&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:13:00 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:11
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:200984
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;6KifsPGjjjxg42gQy3OS&quot;,
+  &quot;captcha_value&quot;: &quot;200984&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.43s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:13:00 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:369
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk4MH0.P7SK70aHgvtCSLFG88PyqbmOMWekAhQMSmKV3hR2Wq0&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserList:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserList
+INFO     root:log_utils.py:51 请求URL：[get]http://10.151.35.12:30080/v1/users?page.offset=0&amp;page.limit=100&amp;page.total=0
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk4MH0.P7SK70aHgvtCSLFG88PyqbmOMWekAhQMSmKV3hR2Wq0
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.08s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:1217
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:13:00 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:13
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;page&quot;: {
+    &quot;limit&quot;: 100,
+    &quot;offset&quot;: 0,
+    &quot;total&quot;: 6
+  },
+  &quot;users&quot;: [
+    {
+      &quot;created_time&quot;: &quot;2024-07-30T09:15:02Z&quot;,
+      &quot;id&quot;: &quot;1&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_ADMIN_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-admin-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:13:01Z&quot;,
+      &quot;username&quot;: &quot;admin&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:33Z&quot;,
+      &quot;id&quot;: &quot;146&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_ADMIN_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-admin-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:33Z&quot;,
+      &quot;username&quot;: &quot;test0001&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:36Z&quot;,
+      &quot;id&quot;: &quot;147&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-normal-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:49Z&quot;,
+      &quot;username&quot;: &quot;test0002&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:39Z&quot;,
+      &quot;id&quot;: &quot;148&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-normal-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:39Z&quot;,
+      &quot;username&quot;: &quot;test00010&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:44Z&quot;,
+      &quot;id&quot;: &quot;150&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-normal-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:44Z&quot;,
+      &quot;username&quot;: &quot;test00013&quot;
+    },
+    {
+      &quot;created_time&quot;: &quot;2024-08-02T02:12:45Z&quot;,
+      &quot;id&quot;: &quot;151&quot;,
+      &quot;password&quot;: &quot;&quot;,
+      &quot;role&quot;: &quot;UR_NORMAL_USER&quot;,
+      &quot;sub_roles&quot;: [
+        &quot;user-normal-policy&quot;
+      ],
+      &quot;token&quot;: &quot;&quot;,
+      &quot;updated_time&quot;: &quot;2024-08-02T02:12:46Z&quot;,
+      &quot;username&quot;: &quot;test00014&quot;
+    }
+  ]
+}
+INFO     root:log_utils.py:51 
+
+====================UserDelete:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserDelete
+INFO     root:log_utils.py:51 请求URL：[delete]http://10.151.35.12:30080/v1/users/146
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk4MH0.P7SK70aHgvtCSLFG88PyqbmOMWekAhQMSmKV3hR2Wq0
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.11s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:2
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:13:01 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:48
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {}
+INFO     root:log_utils.py:51 
+
+====================UserDelete:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserDelete
+INFO     root:log_utils.py:51 请求URL：[delete]http://10.151.35.12:30080/v1/users/147
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk4MH0.P7SK70aHgvtCSLFG88PyqbmOMWekAhQMSmKV3hR2Wq0
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.1s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:2
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:13:01 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:36
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {}
+INFO     root:log_utils.py:51 
+
+====================UserDelete:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserDelete
+INFO     root:log_utils.py:51 请求URL：[delete]http://10.151.35.12:30080/v1/users/148
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk4MH0.P7SK70aHgvtCSLFG88PyqbmOMWekAhQMSmKV3hR2Wq0
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.27s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:2
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:13:01 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:206
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {}
+INFO     root:log_utils.py:51 
+
+====================UserDelete:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserDelete
+INFO     root:log_utils.py:51 请求URL：[delete]http://10.151.35.12:30080/v1/users/150
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk4MH0.P7SK70aHgvtCSLFG88PyqbmOMWekAhQMSmKV3hR2Wq0
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.8s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:2
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:13:02 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:735
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {}
+INFO     root:log_utils.py:51 
+
+====================UserDelete:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserDelete
+INFO     root:log_utils.py:51 请求URL：[delete]http://10.151.35.12:30080/v1/users/151
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk4MH0.P7SK70aHgvtCSLFG88PyqbmOMWekAhQMSmKV3hR2Wq0
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.79s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:2
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:13:03 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:731
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserDelete_002.postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserDelete_002.postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserDelete_002结束<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td>  用户注销. </td>
+          <td>test_api_UserLogout</td>
+          <td></td>
+          <td class="col-duration">1.28</td>
+          <td><a class="col-links" href="pm/TestConsoleApi.test_api_UserLogout.postman_collection.json" target="_blank">postman</a></td></tr>
+        <tr>
+          <td class="extra" colspan="6">
+            <div class="log"> -----------------------------Captured stdout setup------------------------------ <br/>欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+欢迎使用ddddocr，本项目专注带动行业内卷，个人博客:wenanzhe.com
+训练数据支持来源于:http://146.56.204.113:19199/preview
+爬虫框架feapder可快速一键接入，快速开启爬虫之旅：https://github.com/Boris-code/feapder
+谷歌reCaptcha验证码 / hCaptcha验证码 / funCaptcha验证码商业级识别接口：https://yescaptcha.com/i/NSwk7i
+<br/> -------------------------------Captured log setup------------------------------- <br/>INFO     root:test_console_api.py:29 用例test_api_UserLogout开始
+INFO     root:conftest.py:32 parse digit:8054
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;ItfXwbDo8TwqVC6XbYMD&quot;,
+  &quot;captcha_value&quot;: &quot;8054&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：400 Reason: Bad Request, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:51
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:13:03 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;code&quot;: 3,
+  &quot;details&quot;: [],
+  &quot;message&quot;: &quot;invalid captcha&quot;
+}
+INFO     root:conftest.py:32 parse digit:335296
+INFO     root:log_utils.py:51 
+
+====================UserLogin:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogin
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/login
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;captcha_id&quot;: &quot;IiRugD5KM6DUSf4E7AHk&quot;,
+  &quot;captcha_value&quot;: &quot;335296&quot;,
+  &quot;password&quot;: &quot;$2b$12$Fl.qdwvVaxSvE4lja6cJg.M2q4gqRiI9A5B/2sI45X96QHeABWws2&quot;,
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.42s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:202
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:13:04 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:361
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:0
+INFO     root:log_utils.py:51 响应报文： {
+  &quot;token&quot;: &quot;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk4NH0.VY9xNUSmHljBXwyN5A1uT_Ahr2RTIkRdgCWJZn9KZR0&quot;,
+  &quot;user_id&quot;: &quot;1&quot;
+}
+INFO     root:test_console_api.py:20 ==========TestConsoleApi测试开始==========<br/> -------------------------------Captured log call-------------------------------- <br/>INFO     root:log_utils.py:51 
+
+====================UserLogout:====================
+INFO     root:log_utils.py:51 PM信息：[console]Collection:console=&gt;UserLogout
+INFO     root:log_utils.py:51 请求URL：[post]http://10.151.35.12:30080/v1/auth/logout
+INFO     root:log_utils.py:51 请求header：
+INFO     root:log_utils.py:51 Authorization:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjEsIlVzZXJOYW1lIjoiYWRtaW4iLCJSb2xlIjoiVVJfQURNSU5fVVNFUiIsImV4cCI6MTcyMjYwNzk4NH0.VY9xNUSmHljBXwyN5A1uT_Ahr2RTIkRdgCWJZn9KZR0
+INFO     root:log_utils.py:51 请求报文： {
+  &quot;username&quot;: &quot;admin&quot;
+}
+INFO     root:log_utils.py:51 Status_code：200 Reason: OK, time:0.07s
+INFO     root:log_utils.py:51 响应header：
+INFO     root:log_utils.py:51 Content-Type:application/json
+INFO     root:log_utils.py:51 Content-Length:2
+INFO     root:log_utils.py:51 Connection:keep-alive
+INFO     root:log_utils.py:51 Grpc-Metadata-Content-Type:application/grpc
+INFO     root:log_utils.py:51 Date:Fri, 02 Aug 2024 02:13:04 GMT
+INFO     root:log_utils.py:51 X-Kong-Upstream-Latency:8
+INFO     root:log_utils.py:51 X-Kong-Proxy-Latency:1
+INFO     root:log_utils.py:51 响应报文： {}<br/> -----------------------------Captured log teardown------------------------------ <br/>INFO     root:ext_info.py:56 start exec do after func
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserLogout.postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/TestConsoleApi.test_api_UserLogout.postman_collection.json
+INFO     root:test_console_api.py:33 用例test_api_UserLogout结束
+INFO     root:test_console_api.py:24 ==========TestConsoleApi测试结束==========
+
+INFO     root:test_console_api.py:25 clear tasks finish
+INFO     root:ext_info.py:56 start exec do after func
+INFO     root:ext_info.py:316 swagger:console
+INFO     root:utils.py:229 cov文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/cov.log
+INFO     root:utils.py:221 pm文件写入成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/all.postman_collection.json
+INFO     root:utils.py:283 pm文件生成成功.path:/root/jenkinshome/CI/autotest/result/nova_mini_test_biren/20240802_021230/pm/all.postman_collection.json<br/></div></td></tr></tbody></table></body></html>

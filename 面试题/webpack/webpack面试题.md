@@ -57,7 +57,7 @@
 
 ![image-20240507025025429](C:\Users\洁哥\AppData\Roaming\Typora\typora-user-images\image-20240507025025429.png)
 
+## 8、vite与webpack的区别，为什么vite比webpack快？
 
-
-
+[我们可以参考下面文章](https://zxuqian.cn/difference-between-vite-and-webpack/)
 
