@@ -1263,16 +1263,75 @@ server {
 * **`mouseover`**:  适合需要监听鼠标进入元素**及其子元素**的场景，比如：下拉菜单（鼠标在菜单里面移动的时候这个菜单不会收起）、工具提示。
 * **`mouseenter`**:  适合只需监听鼠标进入元素**本身**的场景，比如：统计元素的鼠标进入次数、实现特定效果，尤其是不需要考虑子元素的场景。
 
-
 总的来说，`mouseenter` 比 `mouseover` 更精确，因为它只关注目标元素本身的鼠标进入行为。 在实际应用中，需要根据具体需求选择合适的事件类型。
 
 
 
+### 56、说一下apply、bind与call的区别？
 
+首先这三个方法都会修改this的指向，具体的区别:
 
+apply与call接受的参数是不同的，c**all接受的是逐个参数，apply接受的是一个参数数组**，返回的是函数执行后的值
 
+bind，接受的参数也是逐个的参数，使用这个方法后，他的**返回值是一个函数**，需要我们去手动调用才可以得到最后的结果
 
+具体的实现可以看下面的自定义的代码：
 
+```javascript
+//下面的代码是apply的自定义实现
+
+Function.prototype.myApply = function (context, args) {
+  console.log("输出传递的参数,", args);
+  context = context || window;
+
+  const key = Symbol();
+
+  context[key] = this;
+
+  //   这里的参数为什么不使用展开运算符,这个需要看你的this指向的函数接受的参数的数量吗,本例中,这个sayHello函数只接受一个参数,所以就不需要展开了
+  //   ,如果使用展开运算符的话,我们需要确保数组里面的元素个数与函数接受的参数保持一致
+  const result = context[key](args);
+
+  delete context[key];
+
+  return result;
+};
+
+function sayHello(message) {
+  return `${message} ,${this.name}`;
+}
+
+const obj = {
+  name: "jie",
+};
+
+const msg = sayHello.myApply(obj, ["hello", "早上好啊!", "sdhfiushiu"]);
+console.log("输出msg:", msg);
+```
+
+下面是call方法的实现(仅仅供参考)
+
+```javascript
+Function.prototype.myCall = function (context, ...args) {
+  context = context || globalThis;
+  const key = Symbol();
+  context[key] = this;
+  const result = context[key](...args);
+  delete context[key];
+  return result;
+};
+
+function sayHello(message) {
+  return `${message} ,年纪仅仅${this.age}的${this.name}`;
+}
+
+const person = {
+  name: "jie",
+  age: "18",
+};
+console.log(sayHello.myCall(person, "你好啊！")); //你好啊！ ,年纪仅仅18的jie
+
+```
 
 
 
