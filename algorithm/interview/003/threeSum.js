@@ -32,6 +32,7 @@ var threeSum = function (nums) {
       } else {
         right--;
       }
+      x;
     }
   }
   return result;
