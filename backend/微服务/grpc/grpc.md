@@ -19,7 +19,7 @@
    - **用法**: 一旦安装，可以使用 `protoc` 命令结合此插件来生成 Go 代码，例如：
      
      ```bash
-  protoc --go_out=. your_file.proto
+    protoc --go_out=. your_file.proto
      ```
 
 #### `user.pb.go`文件的生成
@@ -128,6 +128,16 @@ option (google.api.http) = {
 protoc --grpc-gateway_out=. user.proto
 ```
 
+如果执行过程中发生错误，我们需要检查一下有没有安装这个插件
+
+```go
+protoc-gen-grpc-gateway -version  //查看当前系统是否安装了这个插件
+
+go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@latest
+```
+
+
+
 `grpc-gateway` 是一个将 gRPC 服务自动转换为 RESTful API 的库，它的主要作用和必要性如下：
 
 **主要作用**
@@ -162,15 +172,15 @@ protoc --grpc-gateway_out=. user.proto
 
 `grpc-gateway` 在现代服务架构中发挥着重要的作用，它使得 gRPC 服务可以通过 RESTful API 进行访问，增加了服务的灵活性和可用性，是实现微服务和多样化客户端支持的一种有效工具。	
 
-### 4.生成OpenAPI 文件（Swagger 文件）
+### 4.[生成OpenAPI 文件（Swagger 文件）](https://go-kratos.dev/docs/guide/openapi/)
 
 1. **安装 `protoc-gen-openapi` 插件：**
-   
    - 首先，你需要安装 `protoc-gen-openapi` 插件。如果你使用的是 gRPC Gateway v2，插件现在称为 `protoc-gen-openapiv2`。
 - 你可以通过 Go 语言的包管理工具安装：
-   
+  
    ```bash
    go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest
+   ```
 ```
    
 2. **确保插件在系统路径中：**
@@ -180,7 +190,7 @@ protoc --grpc-gateway_out=. user.proto
 
    ```bash
    set PATH=%PATH%;%GOPATH%\bin
-   ```
+```
 
 3. **调整 `protoc` 命令：**
    如果你使用的是新版插件，命令需要更新为：
