@@ -19,7 +19,7 @@
    - **用法**: 一旦安装，可以使用 `protoc` 命令结合此插件来生成 Go 代码，例如：
      
      ```bash
-  protoc --go_out=. your_file.proto
+    protoc --go_out=. your_file.proto
      ```
 
 #### `user.pb.go`文件的生成
@@ -168,9 +168,10 @@ protoc --grpc-gateway_out=. user.proto
    
    - 首先，你需要安装 `protoc-gen-openapi` 插件。如果你使用的是 gRPC Gateway v2，插件现在称为 `protoc-gen-openapiv2`。
 - 你可以通过 Go 语言的包管理工具安装：
-   
+  
    ```bash
    go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest
+   ```
 ```
    
 2. **确保插件在系统路径中：**
@@ -180,7 +181,7 @@ protoc --grpc-gateway_out=. user.proto
 
    ```bash
    set PATH=%PATH%;%GOPATH%\bin
-   ```
+```
 
 3. **调整 `protoc` 命令：**
    如果你使用的是新版插件，命令需要更新为：
@@ -331,3 +332,164 @@ Postman 也支持导入 OpenAPI 文件：
 - 讨论选择 gRPC 还是 REST 的情况，何时适合用 gRPC，何时适合用 REST。gRPC 更适合微服务架构和高性能应用，而 REST 则在广泛的浏览器和开发者工具中更具兼容性。
 
 以上补充内容提供了更全面的视角，能帮助你更深入地理解 gRPC 及其生态系统。如果需要进一步探讨某个主题或具体实现，请告诉我！
+
+
+
+## 2.如何参加一个http到grpc的多路复用器？
+
+以下是一个具体实例，解释如何使用 `runtime.NewServeMux` 来创建一个 gRPC 多路复用器，并结合 HTTP 请求和 gRPC 服务的处理。
+
+### 背景
+
+假设我们正在构建一个简单的在线图书管理系统，其中有一个 gRPC 服务提供图书信息的 CRUD（创建、读取、更新、删除）操作。我们希望通过 RESTful API（HTTP 接口）来访问这些 gRPC 功能，以便让不支持 gRPC 的客户端（如网页前端或移动应用）也能够访问这些服务。
+
+### 1. 定义 Protobuf 消息和服务
+
+首先，我们定义一个简单的 Protobuf 文件 `book.proto`：
+
+```protobuf
+syntax = "proto3";
+
+package book;
+
+// 图书消息
+message Book {
+  string id = 1; // 图书ID
+  string title = 2; // 图书标题
+  string author = 3; // 作者
+}
+
+// 定义图书服务
+service BookService {
+  rpc GetBook(Book) returns (Book); // 获取图书信息
+  rpc CreateBook(Book) returns (Book); // 创建新图书
+}
+```
+
+### 2. 实现 gRPC 服务
+
+接下来，我们实现这个 gRPC 服务：
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+	"net"
+
+	pb "path/to/your/proto/package" // 导入生成的 protobuf 包
+
+	"google.golang.org/grpc"
+)
+
+// Server 实现了 BookService
+type server struct {
+	pb.UnimplementedBookServiceServer // 避免未实现方法的错误
+	books map[string]*pb.Book // 存储图书信息
+}
+
+func (s *server) GetBook(ctx context.Context, book *pb.Book) (*pb.Book, error) {
+	return s.books[book.Id], nil // 根据 ID 返回图书信息
+}
+
+func (s *server) CreateBook(ctx context.Context, book *pb.Book) (*pb.Book, error) {
+	s.books[book.Id] = book
+	return book, nil // 返回新创建的图书
+}
+
+func main() {
+	lis, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer()
+	pb.RegisterBookServiceServer(s, &server{books: make(map[string]*pb.Book)})
+
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+}
+```
+
+### 3. 创建 HTTP 到 gRPC 的多路复用器
+
+现在，我们要使用 `runtime.NewServeMux` 将 HTTP 请求转发到 gRPC 服务。
+
+```go
+package main
+
+import (
+	"context"
+	"log"
+	"net/http"
+
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc"
+	pb "path/to/your/proto/package"
+)
+
+func main() {
+	// 启动 gRPC 服务器
+	go startGRPCServer()
+
+	// 创建 gRPC 多路复用器
+	ctx := context.Background()
+	rmux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(
+			runtime.MIMEWildcard,
+			&runtime.JSONPb{
+				MarshalOptions: protojson.MarshalOptions{
+					EmitDefaultValues: true,
+					UseProtoNames:     true,
+				},
+				UnmarshalOptions: protojson.UnmarshalOptions{
+					DiscardUnknown: true,
+				},
+			},
+		),
+	)
+
+	// 注册 gRPC 服务到多路复用器
+	err := pb.RegisterBookServiceHandlerFromEndpoint(ctx, rmux, "localhost:50051", []grpc.DialOption{grpc.WithInsecure()})
+	if err != nil {
+		log.Fatalf("Failed to register service handler: %v", err)
+	}
+
+	// 启动 HTTP 服务器
+	http.Handle("/", rmux)
+	log.Println("Starting HTTP server on :8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func startGRPCServer() {
+	// 在这里启动 gRPC 服务器代码
+}
+```
+
+### 4. 客户端请求示例
+
+在这个示例中，客户端可以使用 HTTP 请求调用图书服务。例如，创建一本新书的请求可以使用以下 CURL 命令：
+
+```bash
+curl -X POST \
+  http://localhost:8080/v1/book \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "id": "1",
+        "title": "The Go Programming Language",
+        "author": "Alan A. A. Donovan"
+      }'
+```
+
+### 5. 工作流程
+
+1. **HTTP 请求**: 客户端发送 HTTP 请求到 `/v1/book` 路径。
+2. **多路复用器处理**: `rmux` 接收到请求并识别出该请求需要转发给 gRPC 服务。
+3. **请求转换**: `rmux` 将 HTTP 请求转换为相应的 gRPC 请求，执行 `CreateBook` 方法。
+4. **响应返回**: gRPC 服务处理请求后返回响应，`rmux` 将响应转换为 JSON 格式并返回给 HTTP 客户端。
+
+### 总结
+
+通过使用 `runtime.NewServeMux` 和配置序列化选项，我们能够灵活地将 HTTP 请求与 gRPC 服务连接起来，使得不支持 gRPC 的客户端也能方便地访问 gRPC 服务。这种设计模式使得服务更加友好，促进了不同协议之间的互操作性。
