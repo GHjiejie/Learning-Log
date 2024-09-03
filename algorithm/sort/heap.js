@@ -3,7 +3,7 @@ function heapSort(arr) {
   //构建大顶堆
   function bulidMaxHeap(arr, n, i) {
     let largest = i;
-    let left = i / 2 + 1;
+    let left = i * 2 + 1;
     let right = i * 2 + 2;
 
     if (left < n && arr[left] > arr[largest]) {
