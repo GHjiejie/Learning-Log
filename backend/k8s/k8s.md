@@ -95,3 +95,112 @@ redis-12345      0/1     Pending   0          1h
 
 ### 总结
 `kubectl get po` 是一个基本而强大的命令，用于检查 Kubernetes 集群中 Pod 的状态。它有助于运维人员和开发人员快速了解应用程序的运行情况，从而进行必要的维护和故障排查。
+
+
+
+## k8s常用的命令有哪些？
+
+以下是一些 Kubernetes 常用的命令，帮助你进行日常操作和管理：
+
+### 基本命令
+- **查看集群信息**
+  ```bash
+  kubectl cluster-info
+  ```
+
+- **获取所有命名空间**
+  ```bash
+  kubectl get namespaces
+  ```
+
+### Pod 操作
+- **列出 Pods**
+  ```bash
+  kubectl get pods
+  ```
+
+- **获取特定 Pod 的详细信息**
+  ```bash
+  kubectl describe pod <pod-name>
+  ```
+
+- **创建 Pod**
+  ```bash
+  kubectl run <pod-name> --image=<image-name>
+  ```
+
+- **删除 Pod**
+  ```bash
+  kubectl delete pod <pod-name>
+  ```
+
+### 部署和服务
+- **列出 Deployments**
+  ```bash
+  kubectl get deployments
+  ```
+
+- **创建 Deployment**
+  ```bash
+  kubectl create deployment <deployment-name> --image=<image-name>
+  ```
+
+- **更新 Deployment**
+  ```bash
+  kubectl set image deployment/<deployment-name> <container-name>=<new-image>
+  ```
+
+- **删除 Deployment**
+  ```bash
+  kubectl delete deployment <deployment-name>
+  ```
+
+- **列出 Services**
+  ```bash
+  kubectl get services
+  ```
+
+- **创建 Service**
+  ```bash
+  kubectl expose deployment <deployment-name> --type=<service-type> --port=<port>
+  ```
+
+### 资源管理
+- **查看当前上下文**
+  ```bash
+  kubectl config current-context
+  ```
+
+- **切换上下文**
+  ```bash
+  kubectl config use-context <context-name>
+  ```
+
+- **查看资源使用情况**
+  ```bash
+  kubectl top pods
+  ```
+
+### 日志与调试
+- **查看 Pod 日志**
+  ```bash
+  kubectl logs <pod-name>
+  ```
+
+- **进入 Pod 的交互式终端**
+  ```bash
+  kubectl exec -it <pod-name> -- /bin/bash
+  ```
+
+### 其他
+- **应用 YAML 配置文件**
+  ```bash
+  kubectl apply -f <file.yaml>
+  ```
+
+- **删除资源**
+  ```bash
+  kubectl delete -f <file.yaml>
+  ```
+
+这些命令是 Kubernetes 管理中最常用的一部分，能够帮助你管理和排查问题。如果你有更具体的需求或问题，欢迎继续询问！
