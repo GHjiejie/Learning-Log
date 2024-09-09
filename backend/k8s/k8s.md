@@ -1,4 +1,64 @@
-<<<<<<< HEAD
+## 如何在linux服务器上部署k8s集群
+
+我们这里使用的视 `minikube`驱动为docker来实现搭建一个简单的k8s集群
+
+步骤
+
+```go
+//更新包管理工具
+sudo apt update 
+
+//安装minikube 
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+//需要注意的是，在启动minikube时会报错，提示不可以在root下去执行这个命令
+//所以我们需要新建一个用户 zhengjie
+
+sudo adduser zhengjie
+
+//查看所有用户组
+cat /etc/group
+
+//使用 `getent` 命令查看用户组（更通用）
+getent group
+
+//切换到用户zhengjie
+su zhengjie
+
+//配置用户在安装依赖包的时候不需要进行密码输入
+sudo visudo
+
+//添加规则
+# User privilege specification
+zhengjie ALL=(ALL:ALL) ALL
+
+//然后安装docker
+sudo apt install docker.io
+
+
+//将当前用户添加到docker组
+sudo usermod -aG docker zhengjie
+
+//重新登录
+newgrp docker
+
+//启动minikube
+minikube start --driver=docker
+
+//检查minikube状态
+minikube status
+
+
+```
+
+
+
+
+
+
+
+
 ## 如何理解k8s里面的ingress
 
 在 Kubernetes 中，**Ingress** 是一种 API 对象，用于管理外部用户如何访问集群中的服务。它提供了一种 HTTP 和 HTTPS 路由机制，可以将外部请求转发到集群内部的服务。
