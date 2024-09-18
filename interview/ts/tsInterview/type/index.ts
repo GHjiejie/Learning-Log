@@ -31,4 +31,21 @@ let mermaid: Mermaid = {
     name: 'mermaid',
     run() { console.log('running') },
     swim() { console.log('swimming') }
-}   
+}
+
+type isNum = number;
+let num: isNum = 7;
+console.log(typeof num)
+
+type Test1 = {
+    name: string;
+}
+type Test2 = {
+    age: number;
+}
+let person1: Test1 & Test2 = {
+    name: 'jie',
+    age: 28
+}
+
+console.log(person1)
