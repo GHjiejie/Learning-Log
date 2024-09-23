@@ -1333,7 +1333,87 @@ console.log(sayHello.myCall(person, "你好啊！")); //你好啊！ ,年纪仅�
 
 ```
 
+### 57、手写一下promise.all方法？
 
+下面是一个简单的实现 `Promise.all` 方法的例子。在这个实现中，我们将创建一个名为 `promiseAll` 的函数，它接受一个 Promise 数组并返回一个新的 Promise，该 Promise 将在所有输入 Promise 完成时解决，或在其中一个 Promise 被拒绝时拒绝。
+
+#### `promiseAll` 实现
+
+```javascript
+function promiseAll(promises) {
+    return new Promise((resolve, reject) => {
+        // 校验输入是否是数组
+        if (!Array.isArray(promises)) {
+            return reject(new TypeError('The argument must be an array.'));
+        }
+
+        let results = [];
+        let completedCount = 0;
+
+        promises.forEach((promise, index) => {
+            // 确保每个元素都是一个 Promise
+            Promise.resolve(promise)
+                .then(value => {
+                    results[index] = value; // 存储结果
+                    completedCount++;
+
+                    // 如果所有 Promise 都已完成，解决主 Promise
+                    if (completedCount === promises.length) {
+                        resolve(results);
+                    }
+                })
+                .catch(reject); // 只要有一个 Promise 被拒绝，就拒绝主 Promise
+        });
+
+        // 处理空数组情况
+        if (promises.length === 0) {
+            resolve(results); // 返回一个空数组
+        }
+    });
+}
+```
+
+#### 使用示例
+
+以下是如何使用 `promiseAll` 的示例：
+
+```javascript
+const p1 = Promise.resolve(3);
+const p2 = new Promise((resolve) => setTimeout(resolve, 100, 'foo'));
+const p3 = new Promise((resolve, reject) => setTimeout(reject, 200, 'bar'));
+
+promiseAll([p1, p2, p3])
+    .then(result => {
+        console.log(result); // 不会被调用，因为 p3 被拒绝
+    })
+    .catch(error => {
+        console.error(error); // 输出：bar
+    });
+
+// 测试空数组
+promiseAll([]).then(result => {
+    console.log(result); // 输出：[]
+});
+```
+
+#### 解释
+
+1. **参数检查**：
+   - 检查传入的参数是否为数组。如果不是，立即拒绝 Promise。
+
+2. **结果存储**：
+   - 使用 `results` 数组来存储每个 Promise 的结果，`completedCount` 用于跟踪已完成的 Promise 数量。
+
+3. **遍历 Promise**：
+   - 对每个 Promise 使用 `Promise.resolve` 来确保即使传入的不是 Promise，也能正常处理。
+   - 在每个 Promise 成功时，将结果存入 `results` 数组，并增加 `completedCount`。
+   - 当所有 Promise 都完成时，调用 `resolve(results)`。
+   - 一旦任何 Promise 被拒绝，调用 `reject`，并停止进一步处理。
+
+4. **处理空数组**：
+   - 如果传入的是一个空数组，直接解决 Promise 并返回一个空数组。
+
+这样就实现了一个简化版的 `Promise.all`。如果你还有其他问题或需要更详细的说明，请告诉我！
 
 
 
