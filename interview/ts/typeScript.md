@@ -134,6 +134,7 @@ class cat implements Cat{
         return `一只${this.age}岁的${this.name}在奔跑！！！`
     }
 }
-cat.run();
+let cat=new Cat('jie',18,'male');
+console.log(cat.run())
 ```
 
