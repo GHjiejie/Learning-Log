@@ -180,6 +180,7 @@ go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@lat
   
    ```bash
    go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest
+   go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger@latest
    ```
 ```
    
@@ -207,6 +208,29 @@ go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@lat
    ```
 
 如果上述步骤完成后依然出现错误，请确保 `.proto` 文件内容正确配置，并检查 `protoc` 是否能找到相关的依赖文件。
+
+执行一下命令生成swagger文件
+
+`protoc -I. --swagger_out=logtostderr=true:. pb/user.proto`
+
+当然，如果我们要指定生成的swagger文件的位置，比如下面这段代码的作用
+
+`protoc -I. --swagger_out=logtostderr=true:pb/swagger pb/user.proto`
+
+
+
+**命令说明**
+
+- `-I.`: 指定导入路径为当前目录。
+
+- ```
+  --swagger_out=logtostderr=true:.
+  ```
+
+  - `logtostderr=true` 表示将日志输出到标准错误。
+  - `.` 表示将生成的 Swagger 文件放在当前目录。
+
+- `pb/user.proto`: 是你的 Protobuf 文件的路径。
 
 ### 5.查看openAPI文件
 
@@ -502,3 +526,22 @@ curl -X POST \
 ### 总结
 
 通过使用 `runtime.NewServeMux` 和配置序列化选项，我们能够灵活地将 HTTP 请求与 gRPC 服务连接起来，使得不支持 gRPC 的客户端也能方便地访问 gRPC 服务。这种设计模式使得服务更加友好，促进了不同协议之间的互操作性。
+
+
+
+## 后续补充
+
+- 在执行代码的生成的时候需要提前安装好依赖
+
+-  对于脚本代码的理解
+
+  `protoc --go_out=. .user.proto`  这段代码需要你结合user.proto文件的位置与里面的option一起去看
+
+  如果你的项目结构和我的示例代码的项目结构是一样的，就是说那个user.proto文件在项目的根目录下，那么就可以执行这个命令
+
+  但是实际情况大多数不是这样子的，比如你的user.proto文件在proto文件夹下面，那么你就需要指定这个文件的位置，我们需要将上面的代码修改为一下
+
+  `protoc --go_out=. ./proto/user.proto`
+
+  
+
