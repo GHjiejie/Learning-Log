@@ -6,22 +6,25 @@
 
 ```go
 //更新包管理工具
-sudo apt update 
+sudo apt-get update
+sudo apt-get install sudo
 
 //安装minikube 
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
 
 //需要注意的是，在启动minikube时会报错，提示不可以在root下去执行这个命令
-//所以我们需要新建一个用户 zhengjie
+//所以我们需要新建一个用户 jie
+sudo adduser jie
 
-sudo adduser zhengjie
+//为用户设置密码
+sudo passwd jie
 
-//查看所有用户组
-cat /etc/group
+//为jie用户添加管理员权限
+sudo usermod -aG sudo jie
 
-//使用 `getent` 命令查看用户组（更通用）
-getent group
+//验证
+id jie
 
 //切换到用户zhengjie
 su zhengjie
