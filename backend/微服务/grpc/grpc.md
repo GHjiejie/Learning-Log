@@ -2,9 +2,15 @@
 
 ### 1.首先就是安装必要的环境
 
+```go
+go get google.golang.org/grpc
+go get google.golang.org/protobuf/cmd/protoc-gen-go
+go get google.golang.org/grpc/cmd/protoc-gen-go-grpc
+```
+
 我们可以参考官方文档 [quick start](https://grpc.io/docs/languages/go/quickstart/)
 
-首先是安装protoc buffer 编译器与
+首先是安装protoc buffer 编译器
 
 ```go
  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
